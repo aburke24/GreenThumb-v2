@@ -26,6 +26,44 @@ async function createBed(req, res) {
         res.status(500).json({ message: 'ERROR: Internal server error' });
     }
 }
+/**
+ * Controller function to get a specific bed OR all beds by its user and garden ID using query parameters.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
+ */
+async function getBedsInGarden(req, res) {
+    const { userId, gardenId, bedId } = req.query;
+
+    if (!userId || !gardenId) {
+        return res.status(400).json({ message: 'ERROR: userId and gardenId are required.' });
+    }
+
+    try {
+        let beds;
+        // If a bedId is provided, get only that specific bed.
+        if (bedId) {
+            beds = await bedModel.findBedByUserIdGardenIdAndBedId(userId, gardenId, bedId);
+            // If the bed is found, return it as a single object, otherwise return a 404.
+            if (beds) {
+                return res.status(200).json(beds);
+            } else {
+                return res.status(404).json({ message: 'ERROR: Bed not found for the specified user and garden.' });
+            }
+        } else {
+            // If no bedId is provided, get all beds in the garden.
+            beds = await bedModel.findGardenBedsAndPlantsByGardenId(userId, gardenId);
+        }
+
+        if (!beds || beds.length === 0) {
+             return res.status(404).json({ message: 'ERROR: No beds found for the specified garden.' });
+        }
+
+        res.status(200).json(beds);
+    } catch (error) {
+        console.error('Error fetching bed(s):', error);
+        res.status(500).json({ message: 'ERROR: Internal server error' });
+    }
+}
 
 /**
  * Controller function to get a specific bed by its user, garden, and bed ID using query parameters.
@@ -106,6 +144,7 @@ async function deleteBed(req, res) {
 
 module.exports = {
     createBed,
+    getBedsInGarden,
     getBedByGardenIdAndBedId,
     updateBed,
     deleteBed

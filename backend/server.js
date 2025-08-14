@@ -17,6 +17,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const bedRoutes = require('./routes/bed');
 const gardenRoutes = require('./routes/garden');
+const plantRoutes = require('./routes/plant'); 
 
 // env variables
 dotenv.config();
@@ -33,6 +34,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api/gardens', gardenRoutes);
 app.use('/api/beds', bedRoutes);
+app.use('/api/plants', plantRoutes);
+
 
 // Start server
 app.listen(PORT, () => {

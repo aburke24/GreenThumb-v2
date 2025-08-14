@@ -45,7 +45,6 @@ async function getUserId(req,res) {
         res.status(500).json({ message: 'ERROR: Internal server error'});
     }
 }
-
 /**
  * Controller function to get a user's full data by ID.
  * This is the new, refactored version.
@@ -66,14 +65,8 @@ async function getUserData(req, res) {
         const gardens = await gardenModel.findGardensByUserId(userId);
         user.gardens = gardens;
 
-        // Step 3: For each garden, get all its beds and their plants from the bedModel.
-        // This is a simplified example; you would likely have a function in bedModel
-        // that handles the fetching of beds and plants together.
-        for (const garden of user.gardens) {
-            garden.beds = await bedModel.findGardenBedsAndPlantsByGardenId(garden.id);
-        }
-
         // Return the full, assembled user object
+        // The beds and plants will be fetched separately by other endpoints
         res.status(200).json(user);
     } catch (error) {
         console.error('Error fetching user data:', error);

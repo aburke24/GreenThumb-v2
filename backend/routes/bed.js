@@ -11,8 +11,8 @@ const bedController = require('../controllers/bedController');
 // Route to create a new bed
 router.post('/', bedController.createBed);
 
-// Route to get a specific bed using query parameters
-router.get('/', bedController.getBedByGardenIdAndBedId);
+// Route to get a specific bed or all beds in a garden using query parameters
+router.get('/', bedController.getBedsInGarden);
 
 // Route to update a specific bed using query parameters
 router.put('/', bedController.updateBed);

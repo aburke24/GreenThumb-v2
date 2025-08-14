@@ -31,6 +31,47 @@ async function create(bedData) {
         throw error;
     }
 }
+/**
+ * Gets all garden beds and their associated plants for a specific garden.
+ * @param {string} userId - The ID of the user.
+ * @param {string} gardenId - The ID of the garden.
+ * @returns {Promise<Array<Object>>} An array of garden bed objects, each with an array of plants.
+ */
+async function findGardenBedsAndPlantsByGardenId(userId, gardenId) {
+    try {
+        const query = `
+            SELECT
+                gb.id AS bed_id,
+                gb.name AS bed_name,
+                gb.width,
+                gb.height,
+                gb.top_position,
+                gb.left_position,
+                JSON_AGG(
+                    JSONB_BUILD_OBJECT(
+                        'plant_in_bed_id', pb.id,
+                        'plant_id', p.id,
+                        'common_name', p.common_name,
+                        'icon_image', p.icon_image,
+                        'x_position', pb.x_position,
+                        'y_position', pb.y_position,
+                        'plant_role', pb.plant_role
+                    )
+                ) AS plants
+            FROM garden_beds gb
+            JOIN gardens g ON gb.garden_id = g.id
+            LEFT JOIN plants_in_beds pb ON gb.id = pb.bed_id
+            LEFT JOIN plants p ON pb.plant_id = p.id
+            WHERE g.user_id = $1 AND g.id = $2
+            GROUP BY gb.id, gb.name, gb.width, gb.height, gb.top_position, gb.left_position;
+        `;
+        const { rows } = await pool.query(query, [userId, gardenId]);
+        return rows;
+    } catch (error) {
+        console.error('Database error in bedModel.findGardenBedsAndPlantsByGardenId:', error);
+        throw error;
+    }
+}
 
 /**
  * Retrieves a single bed by its user, garden, and bed ID.
@@ -124,6 +165,7 @@ async function remove(userId, gardenId, bedId) {
 
 module.exports = {
     create,
+    findGardenBedsAndPlantsByGardenId,
     findBedByUserIdGardenIdAndBedId,
     update,
     remove
