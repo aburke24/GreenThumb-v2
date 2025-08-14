@@ -15,8 +15,8 @@ const { pool } = require('./db');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-const bedRoutes = require('./routes/bed');
-const gardenRoutes = require('./routes/garden');
+//const bedRoutes = require('./routes/bed');
+//const gardenRoutes = require('./routes/garden');
 
 // env variables
 dotenv.config();

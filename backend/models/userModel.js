@@ -28,55 +28,37 @@ async function create(userData){
 }
 
 /**
- * Finds a user by their email for the login process.
+ * Retrieves a user's ID by email.
  * @param {string} email - The user's email address.
- * @returns {Promise<Object|null>} The user object with the password hash if found, or null.
+ * @returns {Promise<Object|null>} The user object with ID, or null if not found.
  */
-async function findByEmail(email){
-    try{
-        const findByEmailQuery = 'SELECT * FROM users WHERE email = $1;';
-        const { rows } = await pool.query(findByEmailQuery, [email]);
+async function getUserId(email){
+   try{
+        const getUserIdQuery = `
+            SELECT id FROM users WHERE email = $1;
+            `;
+        const { rows } = await pool.query(getUserIdQuery, [email]);
         return rows[0] || null;
-    
-    }catch(error){
-         console.error('Database error in userModel.findByEmail:', error);
+   }catch(error){
+        console.error('Database error in userModel.getUserId:', error);
         throw error;
-    }
+   }
 }
 
 /**
- * Finds a user and all their associated data (gardens, beds, plants).
+ * Retrieves a user's basic profile information.
  * @param {string} userId - The ID of the user.
- * @returns {Promise<Object|null>} A processed, nested user object or null if not found.
+ * @returns {Promise<Object|null>} The user object or null if not found.
  */
-async function findUserAndAllData(userId) {
-    try{
-        // _________ todo: make sure this query has all needed data ____________
-        const findUserQuer =`
-      SELECT
-        u.id AS user_id, u.username, u.email,
-        g.id AS garden_id, g.garden_name,
-        gb.id AS bed_id, gb.name AS bed_name, gb.width AS bed_width
-        // ... more columns for plants ...
-      FROM users u
-      LEFT JOIN gardens g ON u.id = g.user_id
-      LEFT JOIN garden_beds gb ON g.id = gb.garden_id
-      WHERE u.id = $1;
-    `;
-
-    const { rows } = await pool.query(findUserQuery, [userId]);
-
-    if (rows.length ==0){
-        return null;
-    }
-
-    // todo _________ update into proper object ___________
-    const userData = {};
-    return userData;
-    }catch (error) {
-        console.error('Database error in userModel.findUserAndAllData:', error);
+async function findUserById(userId) {
+    try {
+        const query = 'SELECT id, username, email, city, state FROM users WHERE id = $1;';
+        const { rows } = await pool.query(query, [userId]);
+        return rows[0] || null;
+    } catch (error) {
+        console.error('Database error in userModel.findUserById:', error);
         throw error;
-  }
+    }
 }
 
 /**
@@ -85,24 +67,40 @@ async function findUserAndAllData(userId) {
  * @param {Object} newData - An object containing the new data for the user.
  * @returns {Promise<Object|null>} The updated user object, or null if the user was not found.
  */
-async function update(userId, newData){
-    try{
-        //________ todo: This needs to have all the user's data!!!!_________
+async function update(userId, newData) {
+    try {
         const updateQuery = `
         UPDATE users
-        SET username = COALESCE($1, username), email = COALESCE($2, email)
-        WHERE id = $3
-        RETURNING *;
+        SET username = COALESCE($1, username), 
+            email = COALESCE($2, email), 
+            password_hash = COALESCE($3, password_hash),
+            city = COALESCE($4, city),
+            state = COALESCE($5, state)
+        WHERE id = $6
+        RETURNING id, username, email, city, state;
         `;
-
-        // __________todo: this needs to have all the user data_________
-        const { rows } = await pool.query(updateQuery, [[newData.username, newData.email, userId]])
+        
+        const { rows } = await pool.query(updateQuery, [
+            newData.username, 
+            newData.email, 
+            newData.password_hash,
+            newData.city,
+            newData.state,
+            userId
+        ]);
+        
         return rows[0] || null;
-    }catch(error){
+    } catch (error) {
         console.error('Database error in userModel.update', error);
+        throw error;
     }
 }
 
+/**
+ * Deletes a user from the database by email.
+ * @param {string} email - The user's email address.
+ * @returns {Promise<Object|null>} The deleted user's ID, or null.
+ */
 async function remove(email) {
   try {
     const removeQuery = 'DELETE FROM users WHERE email = $1 RETURNING id;';
@@ -115,6 +113,6 @@ async function remove(email) {
 }
 
 module.exports = {
-    create, findByEmail, findUserAndAllData, update, remove
+    create, getUserId, findUserById, update, remove
 };
 

@@ -11,18 +11,18 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-//POST Route
-router.get('user/:userId',(req,res) => {
-    userController.postUserData(req,res);
+// GET userId
+router.get('/user/email', (req,res) =>{
+    userController.getUserId(req,res);
 })
 
-//GET Route
-router.get('user/:userId', (req,res) => {
+// GET Route
+router.get('/user/:userId', (req,res) => {
     userController.getUserData(req,res);
 })
 
-//PUT Route
-router.put('user/:userId',(req,res) =>{
+// PUT Route
+router.put('/user/:userId',(req,res) =>{
     userController.updateUserData(req,res);
 })
 

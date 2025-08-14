@@ -8,6 +8,11 @@
  */
 // Imports
 const userModel = require('../models/userModel');
+const gardenModel = require('../models/gardenModel');
+const bedModel = require('../models/bedModel');
+const bcrypt = require('bcrypt');
+
+const BCRYPT_SALT_ROUNDS = 10;
 
 /**
  * Handles the creation of a new user.
@@ -28,24 +33,51 @@ async function createUser(req,res) {
     }
 }
 
+async function getUserId(req,res) {
+    try{
+        const userId = await userModel.getUserId(req.query.email);
+       if(!userId){
+            return res.status(404).json({ message: 'ERROR: User not found' }); 
+       }
+        res.status(201).json(userId);
+    }catch(error){
+        console.error('Error fetching user ID:', error);
+        res.status(500).json({ message: 'ERROR: Internal server error'});
+    }
+}
+
 /**
- * Handles retrieving a user's data.
- *
- * This function fetches a user's profile and all their associated data from the database
- * based on the user ID provided in the URL parameters.
- *
- * @param {object} req - The Express request object, containing the user ID in the parameters.
- * @param {object} res - The Express response object used to send back the user data or an error.
+ * Controller function to get a user's full data by ID.
+ * This is the new, refactored version.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
  */
 async function getUserData(req, res) {
-    try{
-        const userData = await userModel.findUserAndData(req.params.userId);
-        if(!userData){
-           return res.status(404).json({ message: 'ERROR: User not found' }); 
+    try {
+        const { userId } = req.params;
+
+        // Step 1: Get the user's basic profile from the userModel.
+        const user = await userModel.findUserById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'ERROR: User not found' });
         }
-        res.status(200).json(userData);
-    }catch(error){
-        res.status(500).json({ message: 'ERROR: Internal server error'});
+
+        // Step 2: Get all the gardens for that user from the gardenModel.
+        const gardens = await gardenModel.findGardensByUserId(userId);
+        user.gardens = gardens;
+
+        // Step 3: For each garden, get all its beds and their plants from the bedModel.
+        // This is a simplified example; you would likely have a function in bedModel
+        // that handles the fetching of beds and plants together.
+        for (const garden of user.gardens) {
+            garden.beds = await bedModel.findGardenBedsAndPlantsByGardenId(garden.id);
+        }
+
+        // Return the full, assembled user object
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        res.status(500).json({ message: 'ERROR: Internal server error' });
     }
 }
 
@@ -60,12 +92,27 @@ async function getUserData(req, res) {
  */
 async function updateUser(req,res) {
     try{
-        const updatedUser = await userModel.update(req.params.userId, req.body);
+        const { userId } = req.params;
+        const { username, email, password, city, state } = req.body;
+        
+        const updatedData = {};
+        if (username) updatedData.username = username;
+        if (email) updatedData.email = email;
+        if (city) updatedData.city = city;
+        if (state) updatedData.state = state;
+
+        if (password) {
+            updatedData.password_hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+        }
+
+        const updatedUser = await userModel.update(userId, updatedData);
+        
         if(!updatedUser){
             return res.status(404).json({ message: 'ERROR: User not found'});
         }
         res.status(200).json(updatedUser);
     }catch(error){
+        console.error('Error updating user:', error);
         res.status(500).json({ message:'ERROR: User Update failed'});
     }
 }
@@ -86,6 +133,7 @@ async function deleteUser(req, res) {
 
 module.exports = {
   createUser,
+  getUserId,
   getUserData,
   updateUser,
   deleteUser 
