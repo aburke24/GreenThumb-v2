@@ -23,7 +23,7 @@ router.get('/user/:userId', (req,res) => {
 
 // PUT Route
 router.put('/user/:userId',(req,res) =>{
-    userController.updateUserData(req,res);
+    userController.updateUser(req,res);
 })
 
 // DELETE Route

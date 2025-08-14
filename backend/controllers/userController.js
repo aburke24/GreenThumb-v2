@@ -81,40 +81,25 @@ async function getUserData(req, res) {
     }
 }
 
-/**
- * Handles updating a user's information.
- *
- * This function updates a user's data in the database based on their ID
- * and the new data provided in the request body.
- *
- * @param {object} req - The Express request object, with the user ID in the parameters and new data in the body.
- * @param {object} res - The Express response object used to send back the updated user or an error.
- */
-async function updateUser(req,res) {
+async function updateUser(req,res){
+    const { userId } = req.params;
+    const newData = req.body;
+
     try{
-        const { userId } = req.params;
-        const { username, email, password, city, state } = req.body;
-        
-        const updatedData = {};
-        if (username) updatedData.username = username;
-        if (email) updatedData.email = email;
-        if (city) updatedData.city = city;
-        if (state) updatedData.state = state;
+        const updatedUser = await userModel.update(userId,newData);
 
-        if (password) {
-            updatedData.password_hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+        if(updatedUser){
+            console.log("User successfully updated");
+            res.status(200).json(updatedUser);
+        }else {
+            // If no user was found with that ID, send a 404 Not Found error
+            res.status(404).json({ message: 'ERROR: User not found' });
         }
-
-        const updatedUser = await userModel.update(userId, updatedData);
-        
-        if(!updatedUser){
-            return res.status(404).json({ message: 'ERROR: User not found'});
-        }
-        res.status(200).json(updatedUser);
-    }catch(error){
-        console.error('Error updating user:', error);
-        res.status(500).json({ message:'ERROR: User Update failed'});
+    } catch (error) {
+        console.error('Error updating user data:', error);
+        res.status(500).json({ message: 'ERROR: Internal server error' });
     }
+
 }
 
 async function deleteUser(req, res) {
