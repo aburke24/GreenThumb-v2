@@ -1,49 +1,130 @@
 /**
  * @file models/bedModel.js
- * @description Handles all database interactions for the garden bed resource.
+ * @description Handles all database interactions for the bed resource.
  */
+
 const { pool } = require('../db');
 
 /**
- * Retrieves all garden beds and their associated plants for a specific garden.
- * This function has been updated to use the plants_in_beds junction table.
- * @param {string} gardenId - The ID of the garden.
- * @returns {Promise<Array>} An array of garden bed objects, each with a 'plants' array.
+ * Creates a new bed in a specific garden.
+ * @param {Object} bedData - An object containing the bed's data (garden_id, name, top_position, left_position, width, height).
+ * @returns {Promise<Object>} The newly created bed object.
  */
-async function findGardenBedsAndPlantsByGardenId(gardenId) {
+async function create(bedData) {
     try {
-        // Step 1: Get all garden beds for the specified garden.
-        const bedsQuery = `
-            SELECT id, top_position, left_position, width, height
-            FROM garden_beds
-            WHERE garden_id = $1;
+        const createQuery = `
+            INSERT INTO garden_beds (garden_id, name, top_position, left_position, width, height)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, garden_id, name, top_position, left_position, width, height;
         `;
-        const { rows: beds } = await pool.query(bedsQuery, [gardenId]);
-
-        // Step 2: For each bed, get its plants using the junction table.
-        for (const bed of beds) {
-            const plantsQuery = `
-                SELECT 
-                    p.id, 
-                    pib.plant_role,
-                    pib.planted_date,
-                    pib.x_position,
-                    pib.y_position
-                FROM plants_in_beds pib
-                INNER JOIN plants p ON pib.plant_id = p.id
-                WHERE pib.bed_id = $1;
-            `;
-            const { rows: plants } = await pool.query(plantsQuery, [bed.id]);
-            bed.plants = plants; // Attach the list of plants to the current bed object
-        }
-
-        return beds;
+        const { rows } = await pool.query(createQuery, [
+            bedData.garden_id,
+            bedData.name,
+            bedData.top_position,
+            bedData.left_position,
+            bedData.width,
+            bedData.height
+        ]);
+        return rows[0];
     } catch (error) {
-        console.error('Database error in userModel.findGardenBedsAndPlantsByGardenId:', error);
+        console.error('Database error in bedModel.create:', error);
         throw error;
     }
 }
 
+/**
+ * Retrieves a single bed by its user, garden, and bed ID.
+ * @param {string} userId - The ID of the user.
+ * @param {string} gardenId - The ID of the garden.
+ * @param {string} bedId - The ID of the bed.
+ * @returns {Promise<Object|null>} The bed object or null if not found.
+ */
+async function findBedByUserIdGardenIdAndBedId(userId, gardenId, bedId) {
+    try {
+        const query = `
+            SELECT gb.* FROM garden_beds gb
+            JOIN gardens g ON gb.garden_id = g.id
+            WHERE g.user_id = $1 AND g.id = $2 AND gb.id = $3;
+        `;
+        const { rows } = await pool.query(query, [userId, gardenId, bedId]);
+        return rows[0] || null;
+    } catch (error) {
+        console.error('Database error in bedModel.findBedByUserIdGardenIdAndBedId:', error);
+        throw error;
+    }
+}
+
+/**
+ * Updates a bed's information in the database.
+ * @param {string} userId - The ID of the user.
+ * @param {string} gardenId - The ID of the garden.
+ * @param {string} bedId - The ID of the bed to update.
+ * @param {Object} newData - An object containing the new data.
+ * @returns {Promise<Object|null>} The updated bed object, or null if not found.
+ */
+async function update(userId, gardenId, bedId, newData) {
+    try {
+        const updateQuery = `
+            UPDATE garden_beds
+            SET name = COALESCE($1, name),
+                top_position = COALESCE($2, top_position),
+                left_position = COALESCE($3, left_position),
+                width = COALESCE($4, width),
+                height = COALESCE($5, height)
+            WHERE id = $6
+            AND garden_id = $7
+            AND EXISTS (SELECT 1 FROM gardens WHERE id = $7 AND user_id = $8)
+            RETURNING id, garden_id, name, top_position, left_position, width, height;
+        `;
+        const { rows } = await pool.query(updateQuery, [
+            newData.name,
+            newData.top_position,
+            newData.left_position,
+            newData.width,
+            newData.height,
+            bedId,
+            gardenId,
+            userId
+        ]);
+        return rows[0] || null;
+    } catch (error) {
+        console.error('Database error in bedModel.update:', error);
+        throw error;
+    }
+}
+
+/**
+ * Deletes a bed from the database.
+ * @param {string} userId - The ID of the user.
+ * @param {string} gardenId - The ID of the garden.
+ * @param {string} bedId - The ID of the bed to delete.
+ * @returns {Promise<Object|null>} The deleted bed's ID, or null.
+ */
+async function remove(userId, gardenId, bedId) {
+    try {
+        const deleteQuery = `
+            DELETE FROM garden_beds
+            WHERE id = $3 AND garden_id = $2
+            AND id IN (
+                SELECT gb.id
+                FROM garden_beds gb
+                JOIN gardens g ON gb.garden_id = g.id
+                WHERE g.user_id = $1
+            )
+            RETURNING id;
+        `;
+        const { rows } = await pool.query(deleteQuery, [userId, gardenId, bedId]);
+        return rows[0] || null;
+    } catch (error) {
+        console.error('Database error in bedModel.remove:', error);
+        throw error;
+    }
+}
+
+
 module.exports = {
-    findGardenBedsAndPlantsByGardenId
+    create,
+    findBedByUserIdGardenIdAndBedId,
+    update,
+    remove
 };

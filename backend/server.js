@@ -15,7 +15,7 @@ const { pool } = require('./db');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-//const bedRoutes = require('./routes/bed');
+const bedRoutes = require('./routes/bed');
 const gardenRoutes = require('./routes/garden');
 
 // env variables
@@ -32,7 +32,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api/gardens', gardenRoutes);
-//app.use('/api/beds', bedRoutes);
+app.use('/api/beds', bedRoutes);
 
 // Start server
 app.listen(PORT, () => {
