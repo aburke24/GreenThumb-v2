@@ -9,6 +9,8 @@
 // Imports
 const express = require('express');
 const dotenv = require('dotenv');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./documentation/swagger');
 
 // database pool 
 const { pool } = require('./db');
@@ -41,3 +43,4 @@ app.use('/api/plants', plantRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+

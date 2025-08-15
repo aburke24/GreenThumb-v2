@@ -14,6 +14,8 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "redoc-cli": "^0.13.21",
+    "swagger-jsdoc": "^6.2.8"
   }
 }
