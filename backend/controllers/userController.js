@@ -35,7 +35,7 @@ async function createUser(req,res) {
 
 async function getUserId(req,res) {
     try{
-        const userId = await userModel.getUserId(req.query.email);
+        const userId = await userModel.getUserByEmail(req.query.email);
        if(!userId){
             return res.status(404).json({ message: 'ERROR: User not found' }); 
        }

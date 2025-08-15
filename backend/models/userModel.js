@@ -28,21 +28,20 @@ async function create(userData){
 }
 
 /**
- * Retrieves a user's ID by email.
+ * Retrieves a user's information by email, including the password hash.
+ * This function is required for the login process.
  * @param {string} email - The user's email address.
- * @returns {Promise<Object|null>} The user object with ID, or null if not found.
+ * @returns {Promise<Object|null>} The user object or null if not found.
  */
-async function getUserId(email){
-   try{
-        const getUserIdQuery = `
-            SELECT id FROM users WHERE email = $1;
-            `;
-        const { rows } = await pool.query(getUserIdQuery, [email]);
+async function getUserByEmail(email) {
+    try {
+        const query = 'SELECT id, username, email, password_hash, city, state FROM users WHERE email = $1;';
+        const { rows } = await pool.query(query, [email]);
         return rows[0] || null;
-   }catch(error){
-        console.error('Database error in userModel.getUserId:', error);
+    } catch (error) {
+        console.error('Database error in userModel.getUserByEmail:', error);
         throw error;
-   }
+    }
 }
 
 /**
@@ -113,6 +112,6 @@ async function remove(email) {
 }
 
 module.exports = {
-    create, getUserId, findUserById, update, remove
+    create, getUserByEmail, findUserById, update, remove
 };
 
