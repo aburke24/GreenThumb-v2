@@ -18,6 +18,6 @@ router.get('/all-plants', plantController.getPlantsInBed);
 router.get('/catalog', plantController.getAllPlantsFromCatalog);
 
 // Fetch a single plant from the catalog by its ID
-router.get('/catalog/:plantId', plantController.getPlantFromCatalog);
+router.get('/catalog/plantId', plantController.getPlantFromCatalog);
 
 module.exports = router;

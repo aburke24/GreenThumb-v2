@@ -70,13 +70,17 @@ async function findGardensByUserId(userId) {
  * @param {string} gardenId - The ID of the garden to retrieve.
  * @returns {Promise<Object|null>} The garden object, or null if not found.
  */
-async function findById(gardenId) {
+async function findGardenByUserAndGardenId(userId, gardenId) {
     try {
-        const query = 'SELECT id, user_id, garden_name, width, height, is_active FROM gardens WHERE id = $1;';
-        const { rows } = await pool.query(query, [gardenId]);
+        const query = `
+            SELECT id, garden_name, width, height, is_active
+            FROM gardens
+            WHERE user_id = $1 AND id = $2;
+        `;
+        const { rows } = await pool.query(query, [userId, gardenId]);
         return rows[0] || null;
     } catch (error) {
-        console.error('Database error in gardenModel.findById:', error);
+        console.error('Database error in findGardenByUserAndGardenId:', error);
         throw error;
     }
 }
@@ -86,39 +90,29 @@ async function findById(gardenId) {
  * @param {Object} newData - An object containing the new data.
  * @returns {Promise<Object|null>} The updated garden object, or null if not found.
  */
-async function update(gardenId, newData) {
+async function updateByUserAndId(userId, gardenId, newData) {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
 
         let updatedGarden;
 
-        // Check if the user is attempting to set the garden to active
         if (newData.is_active === true) {
-            // user_id of the garden being updated
-            const getUserIdQuery = 'SELECT user_id FROM gardens WHERE id = $1;';
-            const { rows: userRows } = await client.query(getUserIdQuery, [gardenId]);
-            const userId = userRows[0]?.user_id;
-
-            if (userId) {
-                // Set all other gardens for that user to inactive
-                const deactivateQuery = `
-                    UPDATE gardens
-                    SET is_active = FALSE
-                    WHERE user_id = $1 AND id != $2;
-                `;
-                await client.query(deactivateQuery, [userId, gardenId]);
-            }
+            const deactivateQuery = `
+                UPDATE gardens
+                SET is_active = FALSE
+                WHERE user_id = $1 AND id != $2;
+            `;
+            await client.query(deactivateQuery, [userId, gardenId]);
         }
-        
-        // update on the target garden
+
         const updateQuery = `
             UPDATE gardens
             SET garden_name = COALESCE($1, garden_name),
                 width = COALESCE($2, width),
                 height = COALESCE($3, height),
                 is_active = COALESCE($4, is_active)
-            WHERE id = $5
+            WHERE id = $5 AND user_id = $6
             RETURNING id, garden_name, width, height, is_active;
         `;
         const { rows } = await client.query(updateQuery, [
@@ -126,78 +120,90 @@ async function update(gardenId, newData) {
             newData.width,
             newData.height,
             newData.is_active,
-            gardenId
+            gardenId,
+            userId
         ]);
-        
+
         updatedGarden = rows[0] || null;
 
         await client.query('COMMIT');
         return updatedGarden;
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Database error in gardenModel.update:', error);
+        console.error('Database error in updateByUserAndId:', error);
         throw error;
     } finally {
         client.release();
     }
 }
-
 /**
  * Deletes a garden from the database and sets the most recent previous garden to active.
  * @param {string} gardenId - The ID of the garden to delete.
  * @returns {Promise<Object|null>} The deleted garden's ID, or null.
  */
-async function remove(gardenId) {
+async function removeByUserAndId(userId, gardenId) {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
 
-        // user_id of the garden being deleted.
-        const getUserIdQuery = 'SELECT user_id FROM gardens WHERE id = $1;';
-        const { rows: userRows } = await client.query(getUserIdQuery, [gardenId]);
-        const userId = userRows[0]?.user_id;
+        // Confirm ownership
+        const verifyQuery = 'SELECT id FROM gardens WHERE id = $1 AND user_id = $2;';
+        const { rows: verifyRows } = await client.query(verifyQuery, [gardenId, userId]);
 
-        if (!userId) {
+        if (verifyRows.length === 0) {
             await client.query('ROLLBACK');
-            return null; 
+            return null;
         }
 
-        // delete the specified garden.
+        // Delete garden
         const deleteQuery = 'DELETE FROM gardens WHERE id = $1 RETURNING id;';
         const { rows: deletedRows } = await client.query(deleteQuery, [gardenId]);
 
-        if (deletedRows.length === 0) {
-            await client.query('ROLLBACK');
-            return null; 
-        }
-        
-        // Find the most recent garden for that user that is NOT the deleted one.
+        // Activate another garden if possible
         const findNewActiveQuery = `
             SELECT id FROM gardens
             WHERE user_id = $1 AND id != $2
             ORDER BY created_at DESC
             LIMIT 1;
         `;
-        const { rows: newActiveGardenRows } = await client.query(findNewActiveQuery, [userId, gardenId]);
+        const { rows: newActiveRows } = await client.query(findNewActiveQuery, [userId, gardenId]);
 
-        // If a previous garden is found, set it to active.
-        if (newActiveGardenRows.length > 0) {
-            const newActiveGardenId = newActiveGardenRows[0].id;
-            const activateQuery = 'UPDATE gardens SET is_active = TRUE WHERE id = $1;';
-            await client.query(activateQuery, [newActiveGardenId]);
+        if (newActiveRows.length > 0) {
+            const newActiveId = newActiveRows[0].id;
+            await client.query('UPDATE gardens SET is_active = TRUE WHERE id = $1;', [newActiveId]);
         }
 
-        await client.query('COMMIT'); 
+        await client.query('COMMIT');
         return deletedRows[0];
     } catch (error) {
-        await client.query('ROLLBACK'); 
-        console.error('Database error in gardenModel.remove:', error);
+        await client.query('ROLLBACK');
+        console.error('Database error in removeByUserAndId:', error);
         throw error;
     } finally {
         client.release();
     }
 }
+/**
+ * Deletes all gardens associated with a given user ID.
+ * @param {number} userId - The ID of the user whose gardens should be deleted.
+ * @returns {Promise<number>} The number of deleted gardens.
+ */
+async function removeByUserId(userId) {
+    try {
+        const query = 'DELETE FROM gardens WHERE user_id = $1 RETURNING id;';
+        const { rowCount } = await pool.query(query, [userId]);
+        return rowCount;
+    } catch (error) {
+        console.error('Database error in gardenModel.removeByUserId:', error);
+        throw error;
+    }
+}
 
 module.exports = {
-    createAndActivate, findGardensByUserId, findById, update, remove
+    createAndActivate, 
+    findGardensByUserId, 
+    findGardenByUserAndGardenId, 
+    updateByUserAndId, 
+    removeByUserAndId,
+    removeByUserId
 };

@@ -12,12 +12,12 @@ const gardenController = require('../controllers/gardenController');
 router.post('/', gardenController.createGarden);
 
 // get garden
-router.get('/:gardenId', gardenController.getGardenById);
+router.get('/', gardenController.getGardenByUserAndId);
 
 // update garden
-router.put('/:gardenId', gardenController.updateGarden);
+router.put('/', gardenController.updateGardenByUserAndId);
 
 // delete garden
-router.delete('/:gardenId', gardenController.deleteGarden);
+router.delete('/', gardenController.deleteGardenByUserAndId);
 
 module.exports = router;

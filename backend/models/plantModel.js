@@ -127,10 +127,27 @@ async function getPlantById(plantId) {
     }
 }
 
+/**
+ * Deletes all plants associated with a given bed ID.
+ * @param {number} bedId - The ID of the bed whose plants should be deleted.
+ * @returns {Promise<number>} The number of deleted plants.
+ */
+async function removeByBedId(bedId) {
+    try {
+        const query = 'DELETE FROM plants WHERE bed_id = $1 RETURNING id;';
+        const { rowCount } = await pool.query(query, [bedId]);
+        return rowCount;
+    } catch (error) {
+        console.error('Database error in plantModel.removeByBedId:', error);
+        throw error;
+    }
+}
+
 
 module.exports = {
     savePlantsInBed,
     getPlantsForBed,
     getAllPlants,
-    getPlantById
+    getPlantById,
+    removeByBedId
 };

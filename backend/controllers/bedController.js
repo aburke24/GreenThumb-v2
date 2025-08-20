@@ -130,17 +130,23 @@ async function deleteBed(req, res) {
     }
 
     try {
+        // Step 1: Delete all plants associated with the bed.
+        await plantModel.removeByBedId(bedId);
+
+        // Step 2: Delete the bed itself.
         const deletedBed = await bedModel.remove(userId, gardenId, bedId);
+
         if (deletedBed) {
-            res.status(200).json({ message: 'Bed deleted successfully', id: deletedBed.id });
+            res.status(200).json({ message: 'Bed and all associated plants deleted successfully', id: deletedBed.id });
         } else {
             res.status(404).json({ message: 'ERROR: Bed not found for the specified user and garden.' });
         }
     } catch (error) {
-        console.error('Error deleting bed:', error);
+        console.error('Error deleting bed and plants:', error);
         res.status(500).json({ message: 'ERROR: Internal server error' });
     }
 }
+
 
 module.exports = {
     createBed,

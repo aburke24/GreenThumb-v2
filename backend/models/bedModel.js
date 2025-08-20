@@ -162,11 +162,27 @@ async function remove(userId, gardenId, bedId) {
     }
 }
 
+/**
+ * Deletes all beds associated with a given garden ID.
+ * @param {number} gardenId - The ID of the garden whose beds should be deleted.
+ * @returns {Promise<number>} The number of deleted beds.
+ */
+async function removeByGardenId(gardenId) {
+    try {
+        const query = 'DELETE FROM beds WHERE garden_id = $1 RETURNING id;';
+        const { rowCount } = await pool.query(query, [gardenId]);
+        return rowCount;
+    } catch (error) {
+        console.error('Database error in bedModel.removeByGardenId:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     create,
     findGardenBedsAndPlantsByGardenId,
     findBedByUserIdGardenIdAndBedId,
     update,
-    remove
+    remove,
+    removeByGardenId
 };
