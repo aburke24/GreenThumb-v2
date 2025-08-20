@@ -42,7 +42,7 @@ const HomePage = () => {
         setIsProfileModalOpen(false);
     };
 
-    const handleGardenCreated = async (newGarden) => {
+    const handleGardenCreated = async () => {
         await refreshGardens();
         handleCloseGardenModal();
     };
