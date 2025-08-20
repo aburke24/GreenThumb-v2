@@ -38,7 +38,7 @@ app.use(express.json());
 
 // Define routes
 app.use('/api/auth', authRoutes);
-app.use('/api', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/gardens', gardenRoutes);
 app.use('/api/beds', bedRoutes);
 app.use('/api/plants', plantRoutes);

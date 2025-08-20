@@ -12,21 +12,21 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 
 // GET userId
-router.get('/user/email', (req,res) =>{
+router.get('/email', (req,res) =>{
     userController.getUserId(req,res);
 })
 
 // GET Route
-router.get('/user/:userId', (req,res) => {
+router.get('/userId', (req,res) => {
     userController.getUserData(req,res);
 })
 
 // PUT Route
-router.put('/user/:userId',(req,res) =>{
+router.put('/userId',(req,res) =>{
     userController.updateUser(req,res);
 })
 
 // DELETE Route
-router.delete('/users/:userEmail', userController.deleteUser);
+router.delete('/email', userController.deleteUser);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 // src/utils/auth.js
 
-const API_URL = "http://localhost:3001/api";
+const API_URL = import.meta.env.BACKEND_URL;
 
 /**
  * Utility function to handle the login API call.

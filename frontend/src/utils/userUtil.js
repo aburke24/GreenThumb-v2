@@ -4,7 +4,7 @@
  */
 
 // Define the base URL for your API.
-const API_URL = "http://localhost:3001/api";
+const API_URL = import.meta.env.BACKEND_URL;
 
 const fetchUserApi = async (userId) =>{
     try{

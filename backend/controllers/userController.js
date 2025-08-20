@@ -53,7 +53,7 @@ async function getUserId(req,res) {
  */
 async function getUserData(req, res) {
     try {
-        const { userId } = req.params;
+        const { userId } = req.query;
 
         // Step 1: Get the user's basic profile from the userModel.
         const user = await userModel.findUserById(userId);
@@ -75,7 +75,7 @@ async function getUserData(req, res) {
 }
 
 async function updateUser(req,res){
-    const { userId } = req.params;
+    const { userId } = req.query;
     const newData = req.body;
 
     try{
@@ -95,16 +95,44 @@ async function updateUser(req,res){
 
 }
 
+/**
+ * @description Deletes a user and all associated data.
+ * @param {object} req - The Express request object.
+ * @param {object} res - The Express response object.
+ */
 async function deleteUser(req, res) {
     try {
-        const deletedUser = await userModel.remove(req.params.userEmail);
-        if (!deletedUser) {
+        // Step 1: Find the user to ensure they exist.
+        const userToDelete = await userModel.getUserByEmail(req.query.email);
+        if (!userToDelete) {
             return res.status(404).json({ message: 'ERROR: User not found' });
         }
-        console.log(`User with email: ${req.params.userEmail} was successfully deleted.`);
+        const userId = userToDelete.id;
+
+        // Step 2: Find all gardens for the user.
+        const gardens = await gardenModel.findGardensByUserId(userId);
+
+        // Step 3: Iterate through each garden to delete beds and plants.
+        for (const garden of gardens) {
+            const beds = await bedModel.findBedsByGardenId(garden.id);
+            // Delete all plants for each bed in this garden.
+            for (const bed of beds) {
+                await plantModel.removeByBedId(bed.id);
+            }
+            // Delete all beds in this garden.
+            await bedModel.removeByGardenId(garden.id);
+        }
+
+        // Step 4: Delete all gardens for the user.
+        await gardenModel.removeByUserId(userId);
+
+        // Step 5: Delete the user themselves.
+        await userModel.remove(req.query.email);
+
+        console.log(`User with email: ${req.query.email} and all associated data were successfully deleted.`);
         res.status(204).send(); // 204 No Content for a successful deletion.
     } catch (error) {
-        console.error('Error deleting user:', error);
+        console.error('Error deleting user and related data:', error);
         res.status(500).json({ message: 'ERROR: User deletion failed' });
     }
 }

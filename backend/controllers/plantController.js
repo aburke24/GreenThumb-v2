@@ -75,7 +75,7 @@ async function getAllPlantsFromCatalog(req, res) {
  * @param {object} res - The response object.
  */
 async function getPlantFromCatalog(req, res) {
-    const { plantId } = req.params;
+    const { plantId } = req.query;
 
     if (!plantId) {
         return res.status(400).json({ message: 'ERROR: plantId is required.' });
