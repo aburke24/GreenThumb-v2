@@ -9,8 +9,10 @@
 // Imports
 const express = require('express');
 const dotenv = require('dotenv');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./documentation/swagger');
+const cors = require('cors'); 
+
+// Load environment variables as early as possible
+dotenv.config();
 
 // database pool 
 const { pool } = require('./db');
@@ -21,10 +23,13 @@ const bedRoutes = require('./routes/bed');
 const gardenRoutes = require('./routes/garden');
 const plantRoutes = require('./routes/plant'); 
 
-// env variables
-dotenv.config();
-
+// Create Express app only once
 const app = express();
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+}));
 
 const PORT = process.env.PORT || 3001;
 
@@ -38,9 +43,7 @@ app.use('/api/gardens', gardenRoutes);
 app.use('/api/beds', bedRoutes);
 app.use('/api/plants', plantRoutes);
 
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-

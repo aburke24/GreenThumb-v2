@@ -62,6 +62,7 @@ async function login(req, res) {
  */
 async function register(req, res){
     const { username, email, password} = req.body;
+    console.log(req.body);
 
     try{
         // hash password
