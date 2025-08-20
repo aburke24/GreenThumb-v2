@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/UserUser';
 import AddGardenModal from '../modal/AddGardenModal';
+import UserProfileModal from '../modal/UserProfileModal'; // Import the new modal
+import { deleteGardenApi } from '../utils/gardenUtil'; 
 
 const HomePage = () => {
     const navigate = useNavigate();
     const { user, gardens, logout, refreshGardens } = useUser();
     const [loading, setLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isGardenModalOpen, setIsGardenModalOpen] = useState(false); // Renamed for clarity
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New state for profile modal
     // State to track the hovered garden
     const [hoveredGarden, setHoveredGarden] = useState(null);
 
@@ -23,17 +26,25 @@ const HomePage = () => {
         }
     };
 
-    const handleOpenModal = () => {
-        setIsModalOpen(true);
+    const handleOpenGardenModal = () => {
+        setIsGardenModalOpen(true);
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
+    const handleCloseGardenModal = () => {
+        setIsGardenModalOpen(false);
+    };
+
+    const handleOpenProfileModal = () => {
+        setIsProfileModalOpen(true);
+    };
+
+    const handleCloseProfileModal = () => {
+        setIsProfileModalOpen(false);
     };
 
     const handleGardenCreated = async (newGarden) => {
         await refreshGardens();
-        handleCloseModal();
+        handleCloseGardenModal();
     };
 
     // New event handler to set the hovered garden
@@ -45,6 +56,29 @@ const HomePage = () => {
     const handleMouseLeave = () => {
         setHoveredGarden(null);
     };
+
+    // New function to handle navigating to a garden's page
+    const handleGardenClick = (gardenId) => {
+        navigate(`/garden/${gardenId}`);
+    };
+
+    const handleDeleteGarden = async (e, gardenId) => {
+        e.stopPropagation(); // Prevent the click from triggering the parent's onClick handler (handleGardenClick)
+        if (window.confirm('Are you sure you want to delete this garden? This action cannot be undone.')) {
+            try {
+                setLoading(true);
+                await deleteGardenApi(user.id, gardenId);
+                // Refresh the list to remove the deleted garden from the UI
+                await refreshGardens();
+            } catch (error) {
+                console.error('Failed to delete garden:', error);
+                // Optionally, show an error message to the user
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
 
     return (
         <div className="flex flex-col min-h-screen bg-neutral-800 font-sans text-white">
@@ -65,7 +99,7 @@ const HomePage = () => {
                         {loading ? 'Logging Out...' : 'Log Out'}
                     </button>
                     {/* User profile button */}
-                    <button className="rounded-full bg-gray-600 p-2 hover:bg-gray-500 transition-colors">
+                    <button onClick={handleOpenProfileModal} className="rounded-full bg-gray-600 p-2 hover:bg-gray-500 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -84,6 +118,7 @@ const HomePage = () => {
                             [...gardens].reverse().map((garden) => (
                                 <div
                                     key={garden.id}
+                                    onClick={() => handleGardenClick(garden.id)} // Add the click handler here
                                     className="flex items-center justify-between p-4 bg-neutral-700 rounded-lg shadow-md hover:bg-neutral-600 transition-colors cursor-pointer"
                                     onMouseEnter={() => handleMouseEnter(garden)}
                                     onMouseLeave={handleMouseLeave}
@@ -97,7 +132,10 @@ const HomePage = () => {
                                             </svg>
                                         )}
                                     </div>
-                                    <button className="text-red-400 hover:text-red-500 transition-colors">
+                                    <button
+                                        onClick={(e) => handleDeleteGarden(e, garden.id)}
+                                        className="text-red-400 hover:text-red-500 transition-colors"
+                                    >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                         </svg>
@@ -110,7 +148,7 @@ const HomePage = () => {
                     </div>
                     {/* Add Another Garden Button */}
                     <button
-                        onClick={handleOpenModal}
+                        onClick={handleOpenGardenModal}
                         className="mt-4 flex items-center justify-center space-x-2 py-3 px-6 bg-green-700 rounded-lg text-white font-medium hover:bg-green-600 transition-colors shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -135,11 +173,17 @@ const HomePage = () => {
                 </div>
             </main>
 
-            {/* Render the modal component */}
+            {/* Render the modal component for adding a garden */}
             <AddGardenModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
+                isOpen={isGardenModalOpen}
+                onClose={handleCloseGardenModal}
                 onGardenCreated={handleGardenCreated}
+            />
+
+            {/* Render the modal component for user profile */}
+            <UserProfileModal
+                isOpen={isProfileModalOpen}
+                onClose={handleCloseProfileModal}
             />
         </div>
     );

@@ -75,6 +75,56 @@ const fetchUserByEmailApi = async (email) => {
   }
 };
 
+/**
+ * Updates a user's information.
+ * @param {string} userId - The ID of the user to update.
+ * @param {object} newData - An object containing the data to update (e.g., { username: 'New Name' }).
+ * @returns {Promise<object>} The updated user object from the server.
+ */
+export async function updateUserApi(userId, newData) {
+  try {
+    const response = await fetch(`${API_URL}/user/userId?userId=${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update user');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a user by email.
+ * @param {string} email - The email of the user to delete.
+ * @returns {Promise<void>} A promise that resolves when the deletion is successful.
+ */
+export async function deleteUserByEmailApi(email) {
+  try {
+    const response = await fetch(`${API_URL}/user/email?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to delete user');
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+}
+
+
 export{
     fetchUserApi,
     fetchUserByEmailApi
