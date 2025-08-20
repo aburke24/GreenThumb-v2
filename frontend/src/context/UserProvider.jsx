@@ -1,13 +1,14 @@
-// UserProvider.jsx
 import React, { useState, useEffect } from 'react';
-import { UserContext } from './UserContext'; // import the context separately
-import { fetchUserByEmailApi } from '../utils/userUtil';
+import { UserContext } from './UserContext';
+import { fetchUserApi } from '../utils/userUtil';
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [gardens, setGardens] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const login = async (email, token) => {
+  // The login function now takes the full user object directly
+  const login = async (userData, token) => {
     try {
       setLoading(true);
 
@@ -16,16 +17,17 @@ export function UserProvider({ children }) {
       localStorage.setItem('authToken', token);
       localStorage.setItem('tokenExpiration', expirationTime.toString());
 
-      // Fetch user profile by email
-      const basicUser = await fetchUserByEmailApi(email);
-      if (basicUser?.id) {
-        setUser(basicUser);
-      } else {
-        throw new Error('User profile not found.');
-      }
+      // Fetch the full user data again to ensure we get the latest gardens.
+      const fullUserData = await fetchUserApi(userData.id);
+      console.log("Setting user info:", fullUserData);
+
+      setUser(fullUserData);
+      setGardens(fullUserData.gardens);
+
     } catch (error) {
       console.error('Login failed:', error);
       setUser(null);
+      setGardens(null);
     } finally {
       setLoading(false);
     }
@@ -33,9 +35,26 @@ export function UserProvider({ children }) {
 
   const logout = () => {
     setUser(null);
+    setGardens(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('tokenExpiration');
     console.log('Logged out successfully.');
+  };
+
+    const refreshGardens = async () => {
+    if (!user || !user.id) {
+      console.log("Cannot refresh gardens: user is not logged in.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const fullUserData = await fetchUserApi(user.id);
+      setGardens(fullUserData.gardens);
+    } catch (error) {
+      console.error('Failed to refresh gardens:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -44,17 +63,30 @@ export function UserProvider({ children }) {
       const tokenExpiration = localStorage.getItem('tokenExpiration');
 
       if (token && tokenExpiration && Date.now() < parseInt(tokenExpiration)) {
-        // Example email — replace with real data or decode token for email
-        const userEmail = 'newuser@example.com';
-        await login(userEmail, token);
-      } else {
-        setLoading(false);
+        // Assume you have a way to get the user ID from a decoded token or localStorage
+        // For now, we'll fetch from the API to get the latest gardens.
+        // This is a more robust way to handle session restoration.
+        try {
+          // This line assumes you store the user's ID in local storage on initial login.
+          // You will need to implement this part in your LoginPage.
+          const storedUserId = localStorage.getItem('userId');
+          if (storedUserId) {
+            const fullUserData = await fetchUserApi(storedUserId);
+            setUser(fullUserData);
+            setGardens(fullUserData.gardens);
+          }
+        } catch (error) {
+          console.error("Failed to restore user session:", error);
+          setUser(null);
+          setGardens(null);
+        }
       }
+      setLoading(false);
     };
     checkSession();
-  }, []);
+  }, []); // Empty dependency array means this runs only once on mount
 
-  const value = { user, loading, login, logout };
+  const value = { user, gardens, loading, login, logout, refreshGardens };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
