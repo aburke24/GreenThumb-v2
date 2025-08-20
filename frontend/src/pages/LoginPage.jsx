@@ -20,21 +20,23 @@ const LoginPage = () => {
     }
   }, [user, userLoading, navigate]);
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
+      // The loginApi should return both the token AND the user object
       const response = await loginApi(email, password);
-      const token = response.token;
+      const { token, user: userData } = response; // Destructure token and user data from the response
 
-      if (token) {
-        await login(email, token);  // Use the context login method to handle user & token
+      if (token && userData) {
+        // Pass the full user object to the context login function
+        await login(userData, token);
         alert('Login successful!');
         navigate('/home');
       } else {
-        setError('No token received from server');
+        setError('Invalid response from server');
       }
     } catch (err) {
       setError(err.message || 'Login failed');

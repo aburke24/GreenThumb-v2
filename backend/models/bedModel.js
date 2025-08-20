@@ -31,6 +31,24 @@ async function create(bedData) {
         throw error;
     }
 }
+
+/**
+ * Finds all beds for a specific garden.
+ * This function is used to prepare for a cascading delete of beds and plants.
+ * @param {string} gardenId - The ID of the garden.
+ * @returns {Promise<Array<Object>>} An array of bed documents.
+ */
+async function findBedsByGardenId(gardenId) {
+    try {
+        const query = 'SELECT * FROM garden_beds WHERE garden_id = $1;';
+        const { rows } = await pool.query(query, [gardenId]);
+        return rows;
+    } catch (error) {
+        console.error('Database error in bedModel.findBedsByGardenId:', error);
+        throw error;
+    }
+}
+
 /**
  * Gets all garden beds and their associated plants for a specific garden.
  * @param {string} userId - The ID of the user.
@@ -169,7 +187,7 @@ async function remove(userId, gardenId, bedId) {
  */
 async function removeByGardenId(gardenId) {
     try {
-        const query = 'DELETE FROM beds WHERE garden_id = $1 RETURNING id;';
+        const query = 'DELETE FROM garden_beds WHERE garden_id = $1 RETURNING id;';
         const { rowCount } = await pool.query(query, [gardenId]);
         return rowCount;
     } catch (error) {
@@ -180,6 +198,7 @@ async function removeByGardenId(gardenId) {
 
 module.exports = {
     create,
+    findBedsByGardenId,
     findGardenBedsAndPlantsByGardenId,
     findBedByUserIdGardenIdAndBedId,
     update,

@@ -1,7 +1,6 @@
 // src/utils/auth.js
 
-const API_URL = import.meta.env.BACKEND_URL;
-
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 /**
  * Utility function to handle the login API call.
  * @param {string} email - The user's email.
@@ -19,7 +18,7 @@ const loginApi = async (email, password) => {
     });
 
     const contentType = response.headers.get("content-type");
-    console.log(response);
+
     if (!response.ok) {
       let errorMessage = 'Login failed';
 
@@ -57,6 +56,7 @@ const loginApi = async (email, password) => {
 const registerApi = async (username, email, password) => {
   try {
     console.log("made it");
+    console.log(API_URL);
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {

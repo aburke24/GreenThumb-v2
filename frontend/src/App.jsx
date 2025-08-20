@@ -4,6 +4,7 @@ import { UserProvider } from './context/UserProvider';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignUpPage';
 import HomePage from './pages/HomePage';
+import GardenPage from './pages/GardenPage'; // Import the new GardenPage
 
 /**
  * The main application component.
@@ -18,6 +19,7 @@ const App = () => {
           <Route path="/" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/home" element={<HomePage />} />
+          <Route path="/garden/:gardenId" element={<GardenPage />} /> {/* New route for individual gardens */}
         </Routes>
       </BrowserRouter>
     </UserProvider>

@@ -5,6 +5,8 @@
 
 // Imports
 const gardenModel = require('../models/gardenModel');
+const bedModel = require('../models/bedModel');
+const plantModel = require('../models/plantModel');
 
 /**
  * Controller function to create a new garden for a user.
