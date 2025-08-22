@@ -388,13 +388,13 @@ const GardenPage = () => {
                 handleEditBed={handleEditBed}
             />
             {/* Add Bed Button */}
-            <button
-                onClick={openAddBedModal}
-                className="absolute bottom-6 right-6 p-4 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition"
-                aria-label="Add Bed"
-            >
-                <Plus className="w-8 h-8 font-extrabold" />
-            </button>
+          <button
+  onClick={openAddBedModal}
+  className="fixed bottom-6 right-6 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition z-50 sm:p-3"
+  aria-label="Add Bed"
+>
+  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+</button>
 
             {/* Add Bed Modal */}
             <AddBedModal

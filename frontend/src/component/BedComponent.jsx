@@ -18,6 +18,7 @@ const BedComponent = ({
     const [currentLeft, setCurrentLeft] = useState(left_position);
     const [isResizing, setIsResizing] = useState(false); 
 
+
     useEffect(() => {
         setCurrentWidth(width);
         setCurrentHeight(height);
