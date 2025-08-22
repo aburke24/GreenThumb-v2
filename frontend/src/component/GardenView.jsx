@@ -5,8 +5,6 @@ import BedComponent from './BedComponent';
 const GardenView = ({
     gardenWidth,
     gardenHeight,
-    displayWidth,
-    displayHeight,
     beds = [],
     selectedBedId,
     onSelectBed,
