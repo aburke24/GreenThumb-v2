@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Ban } from 'lucide-react'; // Import the icons you need
+import { Pencil, Ban } from 'lucide-react';
 import BedComponent from './BedComponent';
 
 const GardenView = ({
@@ -16,10 +16,9 @@ const GardenView = ({
     onGardenClick,
     setSelectedBedId,
     setUnsavedPositions,
-    onEditBed, // New props for the button handlers
-    onUnplaceBed // New props for the button handlers
+    onEditBed,
+    onUnplaceBed
 }) => {
-
     const cellSize = 10;
 
     // Handle resize from BedComponent
@@ -84,10 +83,14 @@ const GardenView = ({
                     const unsavedData = unsavedPositions[bed.bed_id];
                     const isSelected = selectedBedId === bed.bed_id;
 
-                    // Use unsaved data if available, otherwise use bed data
-                    const currentBedData = isUnsaved
-                        ? { ...bed, ...unsavedData }
-                        : bed;
+                    // Correctly merge the unsaved positions with the bed data
+                    const currentBedData = {
+                        ...bed,
+                        top_position: isUnsaved ? unsavedData.top : bed.top_position,
+                        left_position: isUnsaved ? unsavedData.left : bed.left_position,
+                        width: isUnsaved ? unsavedData.width : bed.width,
+                        height: isUnsaved ? unsavedData.height : bed.height,
+                    };
 
                     if (
                         currentBedData.left_position >= 0 &&
@@ -102,7 +105,6 @@ const GardenView = ({
                                     e.stopPropagation();
                                     onSelectBed && onSelectBed(bed.bed_id);
                                 }}
-                                // This is the wrapper div where the selected bed's outline is applied
                                 className={`absolute cursor-pointer z-20 ${isSelected ? 'ring-4 ring-emerald-400' : ''}`}
                                 style={{
                                     top: currentBedData.top_position * cellSize,
@@ -118,7 +120,6 @@ const GardenView = ({
                                     onCancel={() => onCancelPlacement(bed.bed_id)}
                                     onResize={handleResize}
                                 />
-                                {/* ADD THE BUTTONS HERE */}
                                 {isSelected && !isUnsaved && (
                                     <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">
                                         <button
@@ -126,7 +127,6 @@ const GardenView = ({
                                                 e.stopPropagation();
                                                 onEditBed(bed);
                                             }}
-                                            // Updated classes for a button that matches the outline
                                             className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
                                             title="Edit Bed"
                                         >
@@ -137,7 +137,6 @@ const GardenView = ({
                                                 e.stopPropagation();
                                                 onUnplaceBed(bed);
                                             }}
-                                            // Updated classes for a button that matches the outline
                                             className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
                                             title="Unplace Bed"
                                         >
@@ -155,4 +154,5 @@ const GardenView = ({
         </div>
     );
 };
+
 export default GardenView;
