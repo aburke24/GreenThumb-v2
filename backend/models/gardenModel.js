@@ -97,6 +97,7 @@ async function updateByUserAndId(userId, gardenId, newData) {
 
         let updatedGarden;
 
+        // If setting this garden as active, deactivate all others for this user
         if (newData.is_active === true) {
             const deactivateQuery = `
                 UPDATE gardens
@@ -106,20 +107,30 @@ async function updateByUserAndId(userId, gardenId, newData) {
             await client.query(deactivateQuery, [userId, gardenId]);
         }
 
+        // Force undefined values to null so COALESCE will work
+        const {
+            garden_name = null,
+            width = null,
+            height = null,
+            is_active = null
+        } = newData;
+
         const updateQuery = `
             UPDATE gardens
             SET garden_name = COALESCE($1, garden_name),
                 width = COALESCE($2, width),
                 height = COALESCE($3, height),
-                is_active = COALESCE($4, is_active)
+                is_active = COALESCE($4, is_active),
+                updated_at = now()
             WHERE id = $5 AND user_id = $6
             RETURNING id, garden_name, width, height, is_active;
         `;
+        
         const { rows } = await client.query(updateQuery, [
-            newData.garden_name,
-            newData.width,
-            newData.height,
-            newData.is_active,
+            garden_name,
+            width,
+            height,
+            is_active,
             gardenId,
             userId
         ]);
@@ -136,6 +147,7 @@ async function updateByUserAndId(userId, gardenId, newData) {
         client.release();
     }
 }
+
 /**
  * Deletes a garden from the database and sets the most recent previous garden to active.
  * @param {string} gardenId - The ID of the garden to delete.

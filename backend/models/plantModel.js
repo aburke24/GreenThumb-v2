@@ -128,13 +128,14 @@ async function getPlantById(plantId) {
 }
 
 /**
- * Deletes all plants associated with a given bed ID.
- * @param {number} bedId - The ID of the bed whose plants should be deleted.
- * @returns {Promise<number>} The number of deleted plants.
+ * Deletes all plant-to-bed associations for a given bed ID.
+ * @param {number} bedId - The ID of the bed.
+ * @returns {Promise<number>} The number of deleted associations.
  */
 async function removeByBedId(bedId) {
     try {
-        const query = 'DELETE FROM plants WHERE bed_id = $1 RETURNING id;';
+        // ✅ The table name has been corrected to 'plants_in_beds'
+        const query = 'DELETE FROM plants_in_beds WHERE bed_id = $1 RETURNING id;';
         const { rowCount } = await pool.query(query, [bedId]);
         return rowCount;
     } catch (error) {
