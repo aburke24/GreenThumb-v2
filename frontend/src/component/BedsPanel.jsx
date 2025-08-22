@@ -29,8 +29,31 @@ const BedsPanel = ({
         <div className="w-10 h-1 rounded-full bg-neutral-600"></div>
       </div>
 
-      {/* Toggle buttons and collapse button */}
-      <div className="flex items-center justify-between w-full p-4 sm:p-6">
+      {/* Buttons and collapse toggle */}
+      <div className="flex items-center w-full p-4 sm:p-6 space-x-4">
+        {/* Collapse toggle button on the left */}
+        <button
+          onClick={toggleBeds}
+          className="flex items-center justify-center text-white cursor-pointer select-none"
+          title={isBedsOpen ? 'Collapse' : 'Expand'}
+          style={{ width: '2rem', height: '2rem' }}
+        >
+          <svg
+            className={`w-6 h-6 transform transition-transform duration-300 ${
+              isBedsOpen ? 'rotate-180' : 'rotate-0'
+            }`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+
+        {/* Placed/Unplaced toggle buttons */}
         <div className="flex space-x-4">
           <button
             onClick={() => setShowUnplacedBeds(false)}
@@ -49,28 +72,6 @@ const BedsPanel = ({
             Unplaced Beds
           </button>
         </div>
-
-        {/* Collapse toggle */}
-        <button
-          onClick={toggleBeds}
-          className="flex items-center space-x-2 text-white text-lg font-semibold cursor-pointer select-none"
-          title={isBedsOpen ? 'Collapse' : 'Expand'}
-        >
-          <span>{isBedsOpen ? 'Collapse' : 'Expand'}</span>
-          <svg
-            className={`w-6 h-6 transform transition-transform duration-300 ${
-              isBedsOpen ? 'rotate-180' : 'rotate-0'
-            }`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
-          </svg>
-        </button>
       </div>
 
       {/* Bed cards container */}
