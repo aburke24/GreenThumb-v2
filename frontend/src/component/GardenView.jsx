@@ -51,12 +51,12 @@ const GardenView = ({
         // Check if a bed is selected and the hover area is within the garden bounds
         if (selectedBed && hoveredCol >= 0 && hoveredRow >= 0) {
             // Check if the hover box will fit completely within the garden
-            const fits = 
-                (hoveredCol + hoverBedWidth <= gardenWidth) && 
+            const fits =
+                (hoveredCol + hoverBedWidth <= gardenWidth) &&
                 (hoveredRow + hoverBedHeight <= gardenHeight);
 
             setHoverCell({
-                row: hoveredRow, 
+                row: hoveredRow,
                 col: hoveredCol,
                 fits: fits,
             });
@@ -78,12 +78,10 @@ const GardenView = ({
             <div
                 className="relative bg-[#4E342E] rounded-2xl shadow-inner border-2 border-[#3E2723] transition-transform duration-300 scale-100 max-[640px]:scale-75 origin-top"
                 style={{
-                    width: `${displayWidth}px`,
-                    height: `${displayHeight}px`,
+                    width: `${gardenWidth * cellSize}px`,
+                    height: `${gardenHeight * cellSize}px`,
                     minWidth: '50px',
                     minHeight: '50px',
-                    maxWidth: '500px',
-                    maxHeight: '500px',
                     backgroundColor: '#3E2723',
                     position: 'relative',
                     display: 'grid',

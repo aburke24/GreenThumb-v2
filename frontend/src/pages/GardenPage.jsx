@@ -11,7 +11,7 @@ import BedsPanel from '../component/BedsPanel';
 const GardenPage = () => {
     const { gardenId } = useParams();
     const navigate = useNavigate();
-    const { gardens, refreshBeds, userId, beds, loading } = useUser();
+    const { gardens,refreshGardens, refreshBeds, userId, beds, loading } = useUser();
 
     const [garden, setGarden] = useState(null);
     const [gardenName, setGardenName] = useState('');
@@ -55,7 +55,10 @@ const GardenPage = () => {
 
     const gardenBeds = beds?.[gardenId] ?? [];
 
-    const handleBack = () => navigate(-1);
+    const handleBack = () => {
+        refreshGardens();
+        navigate(-1);
+    }
     const openAddBedModal = () => setIsAddBedOpen(true);
     const closeAddBedModal = () => setIsAddBedOpen(false);
     const toggleBeds = () => setIsBedsOpen(prev => !prev);
@@ -93,34 +96,49 @@ const GardenPage = () => {
     };
 
     const handleSave = async () => {
-        if (!garden || !userId || !gardenId) return;
-        const newData = {
-            garden_name: gardenName,
-            width: parseFloat(gardenWidth),
-            height: parseFloat(gardenHeight),
-        };
-        try {
-            await updateGardenApi(userId, gardenId, newData);
-            const updatePromises = gardenBeds
-                .filter((bed) => bed.id !== undefined && bed.id !== null)
-                .map((bed) => {
-                    const updatedBed = {
-                        ...bed,
-                        top_position: -1,
-                        left_position: -1,
-                    };
-                    return updateBedApi(userId, gardenId, bed.id, updatedBed);
-                });
-            await Promise.all(updatePromises);
-            setGarden({ ...garden, ...newData });
-            await refreshBeds(gardenId);
-            setHasUnsavedChanges(false);
-            setDisplayWidth((parseFloat(gardenWidth) || 0) * 10);
-            setDisplayHeight((parseFloat(gardenHeight) || 0) * 10);
-        } catch (error) {
-            console.error('Error saving garden and unplacing beds:', error);
-        }
+    if (!garden || !userId || !gardenId) return;
+
+    const newData = {
+        garden_name: gardenName,
+        width: parseFloat(gardenWidth),
+        height: parseFloat(gardenHeight),
     };
+
+    try {
+        // 1. Update the garden info
+        console.log("Updating the new garden ", userId, gardenId, newData);
+        await updateGardenApi(userId, gardenId, newData);
+
+        // 2. Update only beds with unsaved changes
+        const updatePromises = Object.entries(unsavedPositions).map(([bedId, bedData]) => {
+            const originalBed = gardenBeds.find(b => b.bed_id === bedId);
+            if (!originalBed) return null;
+
+            const updatedBed = {
+                ...originalBed,
+                top_position: bedData.top,
+                left_position: bedData.left,
+                width: bedData.width,
+                height: bedData.height,
+            };
+
+            return updateBedApi(userId, gardenId, bedId, updatedBed);
+        }).filter(Boolean);
+
+        await Promise.all(updatePromises);
+
+        // 3. Refresh garden and bed state
+        setGarden({ ...garden, ...newData });
+        await refreshBeds(gardenId);
+        setUnsavedPositions({});
+        setSelectedBedId(null);
+        setHasUnsavedChanges(false);
+        setDisplayWidth(newData.width * 10);
+        setDisplayHeight(newData.height * 10);
+    } catch (error) {
+        console.error('Error saving garden and beds:', error);
+    }
+};
 
     const handleDeleteBed = async (bedId) => {
         if (!userId || !gardenId || !bedId) {

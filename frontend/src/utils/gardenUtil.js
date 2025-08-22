@@ -63,6 +63,8 @@ export async function getGardenApi(userId, gardenId) {
  */
 export async function updateGardenApi(userId, gardenId, newData) {
   try {
+    console.log("The gardens info is ", userId, gardenId, newData);
+    console.log("The new data is", newData)
     const response = await fetch(`${API_URL}/gardens?userId=${userId}&gardenId=${gardenId}`, {
       method: 'PUT',
       headers: {
@@ -70,7 +72,7 @@ export async function updateGardenApi(userId, gardenId, newData) {
       },
       body: JSON.stringify(newData),
     });
-
+    console.log("console log is ",response);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to update garden');
