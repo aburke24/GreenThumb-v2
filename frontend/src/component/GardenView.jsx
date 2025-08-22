@@ -20,6 +20,13 @@ const GardenView = ({
     onUnplaceBed
 }) => {
     const cellSize = 10;
+    const [hoverCell, setHoverCell] = React.useState(null);
+
+    // Get the selected bed's data, including its dimensions
+    const selectedBed = beds.find(bed => bed.bed_id === selectedBedId);
+    // Use the unsaved dimensions if they exist, otherwise use the bed's original dimensions
+    const hoverBedWidth = unsavedPositions[selectedBedId]?.width || selectedBed?.width || 1;
+    const hoverBedHeight = unsavedPositions[selectedBedId]?.height || selectedBed?.height || 1;
 
     // Handle resize from BedComponent
     const handleResize = ({ bed_id, newWidth, newHeight }) => {
@@ -31,6 +38,36 @@ const GardenView = ({
                 height: newHeight,
             },
         }));
+    };
+
+    // Handle mouse move over the garden grid
+    const handleMouseMove = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+        const hoveredCol = Math.floor(offsetX / cellSize);
+        const hoveredRow = Math.floor(offsetY / cellSize);
+
+        // Check if a bed is selected and the hover area is within the garden bounds
+        if (selectedBed && hoveredCol >= 0 && hoveredRow >= 0) {
+            // Check if the hover box will fit completely within the garden
+            const fits = 
+                (hoveredCol + hoverBedWidth <= gardenWidth) && 
+                (hoveredRow + hoverBedHeight <= gardenHeight);
+
+            setHoverCell({
+                row: hoveredRow, 
+                col: hoveredCol,
+                fits: fits,
+            });
+        } else {
+            setHoverCell(null);
+        }
+    };
+
+    // Clear hover when mouse leaves grid
+    const handleMouseLeave = () => {
+        setHoverCell(null);
     };
 
     return (
@@ -69,21 +106,38 @@ const GardenView = ({
                         onGardenClick({ row: clickedRow, col: clickedCol });
                     }
                 }}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
             >
                 <p className="absolute top-1 left-2 text-xs text-white/70 z-10">
                     {gardenWidth} x {gardenHeight}
                 </p>
 
+                {/* Garden grid cells */}
                 {Array.from({ length: gardenWidth * gardenHeight }).map((_, index) => (
                     <div key={index} className="bg-[#4E342E]"></div>
                 ))}
 
+                {/* Hover preview cell */}
+                {hoverCell && (
+                    <div
+                        className={`absolute pointer-events-none rounded-sm border ${hoverCell.fits ? 'bg-emerald-400/40 border-emerald-500' : 'bg-red-400/40 border-red-500'}`}
+                        style={{
+                            top: hoverCell.row * cellSize,
+                            left: hoverCell.col * cellSize,
+                            width: hoverBedWidth * cellSize,
+                            height: hoverBedHeight * cellSize,
+                            zIndex: 15,
+                        }}
+                    />
+                )}
+
+                {/* Render beds */}
                 {beds.map((bed) => {
                     const isUnsaved = bed.bed_id in unsavedPositions;
                     const unsavedData = unsavedPositions[bed.bed_id];
                     const isSelected = selectedBedId === bed.bed_id;
 
-                    // Correctly merge the unsaved positions with the bed data
                     const currentBedData = {
                         ...bed,
                         top_position: isUnsaved ? unsavedData.top : bed.top_position,
