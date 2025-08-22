@@ -7,7 +7,7 @@ import { deleteGardenApi } from '../utils/gardenUtil';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const { user, gardens, logout, refreshGardens } = useUser();
+    const { user, gardens, logout, refreshGardens, refreshBeds } = useUser();
     const [loading, setLoading] = useState(false);
     const [isGardenModalOpen, setIsGardenModalOpen] = useState(false); // Renamed for clarity
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New state for profile modal
@@ -18,7 +18,8 @@ const HomePage = () => {
         setLoading(true);
 
         try {
-            logout(); // Call the logout function from context
+            logout();
+            navigate('/'); // Call the logout function from context
         } catch (error) {
             console.error("Logout failed:", error);
         } finally {
@@ -59,6 +60,7 @@ const HomePage = () => {
 
     // New function to handle navigating to a garden's page
     const handleGardenClick = (gardenId) => {
+        refreshBeds(gardenId);
         navigate(`/garden/${gardenId}`);
     };
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { UserContext } from './UserContext';
 import { fetchUserApi } from '../utils/userUtil';
+import { getBedsApi } from '../utils/bedUtil';
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [gardens, setGardens] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [beds, setBeds] = useState({});
 
   // The login function now takes the full user object directly
   const login = async (userData, token) => {
@@ -57,6 +59,23 @@ export function UserProvider({ children }) {
     }
   };
 
+  const refreshBeds = async (gardenId) => {
+  if (!user || !user.id || !gardenId) return;
+
+  try {
+    setLoading(true);
+    const bedsData = await getBedsApi(user.id, gardenId);
+    setBeds(prev => ({
+      ...prev,
+      [gardenId]: bedsData
+    }));
+  } catch (error) {
+    console.error('Failed to refresh beds:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
   useEffect(() => {
     const checkSession = async () => {
       const token = localStorage.getItem('authToken');
@@ -86,7 +105,7 @@ export function UserProvider({ children }) {
     checkSession();
   }, []); // Empty dependency array means this runs only once on mount
 
-  const value = { user, gardens, loading, login, logout, refreshGardens };
+  const value = { user, userId: user?.id, gardens, loading, login, logout, refreshGardens, refreshBeds, beds };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
