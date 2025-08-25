@@ -1,0 +1,602 @@
+[
+  {
+    "plant_id": 1,
+    "common_name": "Sunflower",
+    "spacing": "4",
+    "icon": "/assets/sunflower_icon.png"
+  },
+  {
+    "plant_id": 2,
+    "common_name": "Tomato",
+    "spacing": "4",
+    "icon": "/assets/tomato_icon.png"
+  },
+  {
+    "plant_id": 3,
+    "common_name": "Carrot",
+    "spacing": "1",
+    "icon": "/assets/carrot_icon.png"
+  },
+  {
+    "plant_id": 4,
+    "common_name": "Basil",
+    "spacing": "1",
+    "icon": "/assets/basil_icon.png"
+  },
+  {
+    "plant_5": 5,
+    "common_name": "Zucchini",
+    "spacing": "9",
+    "icon": "/assets/zucchini_icon.png"
+  },
+  {
+    "plant_id": 6,
+    "common_name": "Lettuce",
+    "spacing": "1",
+    "icon": "/assets/lettuce_icon.png"
+  },
+  {
+    "plant_id": 7,
+    "common_name": "Onion",
+    "spacing": "1",
+    "icon": "/assets/onion_icon.png"
+  },
+  {
+    "plant_id": 8,
+    "common_name": "Pumpkin",
+    "spacing": "9",
+    "icon": "/assets/pumpkin_icon.png"
+  },
+  {
+    "plant_id": 9,
+    "common_name": "Cucumber",
+    "spacing": "4",
+    "icon": "/assets/cucumber_icon.png"
+  },
+  {
+    "plant_id": 10,
+    "common_name": "Peppers",
+    "spacing": "4",
+    "icon": "/assets/peppers_icon.png"
+  },
+  {
+    "plant_id": 11,
+    "common_name": "Spinach",
+    "spacing": "1",
+    "icon": "/assets/spinach_icon.png"
+  },
+  {
+    "plant_id": 12,
+    "common_name": "Green Beans",
+    "spacing": "4",
+    "icon": "/assets/green_beans_icon.png"
+  },
+  {
+    "plant_id": 13,
+    "common_name": "Radish",
+    "spacing": "1",
+    "icon": "/assets/radish_icon.png"
+  },
+  {
+    "plant_id": 14,
+    "common_name": "Broccoli",
+    "spacing": "9",
+    "icon": "/assets/broccoli_icon.png"
+  },
+  {
+    "plant_id": 15,
+    "common_name": "Cauliflower",
+    "spacing": "9",
+    "icon": "/assets/cauliflower_icon.png"
+  },
+  {
+    "plant_id": 16,
+    "common_name": "Kale",
+    "spacing": "4",
+    "icon": "/assets/kale_icon.png"
+  },
+  {
+    "plant_id": 17,
+    "common_name": "Sweet Corn",
+    "spacing": "9",
+    "icon": "/assets/sweet_corn_icon.png"
+  },
+  {
+    "plant_id": 18,
+    "common_name": "Potato",
+    "spacing": "4",
+    "icon": "/assets/potato_icon.png"
+  },
+  {
+    "plant_id": 19,
+    "common_name": "Garlic",
+    "spacing": "1",
+    "icon": "/assets/garlic_icon.png"
+  },
+  {
+    "plant_id": 20,
+    "common_name": "Chives",
+    "spacing": "1",
+    "icon": "/assets/chives_icon.png"
+  },
+  {
+    "plant_id": 21,
+    "common_name": "Celery",
+    "spacing": "4",
+    "icon": "/assets/celery_icon.png"
+  },
+  {
+    "plant_id": 22,
+    "common_name": "Eggplant",
+    "spacing": "9",
+    "icon": "/assets/eggplant_icon.png"
+  },
+  {
+    "plant_id": 23,
+    "common_name": "Parsley",
+    "spacing": "1",
+    "icon": "/assets/parsley_icon.png"
+  },
+  {
+    "plant_id": 24,
+    "common_name": "Thyme",
+    "spacing": "1",
+    "icon": "/assets/thyme_icon.png"
+  },
+  {
+    "plant_id": 25,
+    "common_name": "Cabbage",
+    "spacing": "9",
+    "icon": "/assets/cabbage_icon.png"
+  },
+  {
+    "plant_id": 26,
+    "common_name": "Brussels Sprouts",
+    "spacing": "9",
+    "icon": "/assets/brussels_sprouts_icon.png"
+  },
+  {
+    "plant_id": 27,
+    "common_name": "Watermelon",
+    "spacing": "9",
+    "icon": "/assets/watermelon_icon.png"
+  },
+  {
+    "plant_id": 28,
+    "common_name": "Strawberry",
+    "spacing": "4",
+    "icon": "/assets/strawberry_icon.png"
+  },
+  {
+    "plant_id": 29,
+    "common_name": "Herbs Mix",
+    "spacing": "1",
+    "icon": "/assets/herbs_mix_icon.png"
+  },
+  {
+    "plant_id": 30,
+    "common_name": "Arugula",
+    "spacing": "1",
+    "icon": "/assets/arugula_icon.png"
+  },
+  {
+    "plant_id": 31,
+    "common_name": "Beets",
+    "spacing": "4",
+    "icon": "/assets/beets_icon.png"
+  },
+  {
+    "plant_id": 32,
+    "common_name": "Collard Greens",
+    "spacing": "9",
+    "icon": "/assets/collard_greens_icon.png"
+  },
+  {
+    "plant_id": 33,
+    "common_name": "Mustard Greens",
+    "spacing": "4",
+    "icon": "/assets/mustard_greens_icon.png"
+  },
+  {
+    "plant_id": 34,
+    "common_name": "Okra",
+    "spacing": "4",
+    "icon": "/assets/okra_icon.png"
+  },
+  {
+    "plant_id": 35,
+    "common_name": "Peas",
+    "spacing": "1",
+    "icon": "/assets/peas_icon.png"
+  },
+  {
+    "plant_id": 36,
+    "common_name": "Radicchio",
+    "spacing": "4",
+    "icon": "/assets/radicchio_icon.png"
+  },
+  {
+    "plant_id": 37,
+    "common_name": "Rhubarb",
+    "spacing": "4",
+    "icon": "/assets/rhubarb_icon.png"
+  },
+  {
+    "plant_id": 38,
+    "common_name": "Romaine Lettuce",
+    "spacing": "4",
+    "icon": "/assets/romaine_lettuce_icon.png"
+  },
+  {
+    "plant_id": 39,
+    "common_name": "Swiss Chard",
+    "spacing": "4",
+    "icon": "/assets/swiss_chard_icon.png"
+  },
+  {
+    "plant_id": 40,
+    "common_name": "Turnip",
+    "spacing": "4",
+    "icon": "/assets/turnip_icon.png"
+  },
+  {
+    "plant_id": 41,
+    "common_name": "Watercress",
+    "spacing": "1",
+    "icon": "/assets/watercress_icon.png"
+  },
+  {
+    "plant_id": 42,
+    "common_name": "Zinnia",
+    "spacing": "4",
+    "icon": "/assets/zinnia_icon.png"
+  },
+  {
+    "plant_id": 43,
+    "common_name": "Marigold",
+    "spacing": "4",
+    "icon": "/assets/marigold_icon.png"
+  },
+  {
+    "plant_id": 44,
+    "common_name": "Dill",
+    "spacing": "1",
+    "icon": "/assets/dill_icon.png"
+  },
+  {
+    "plant_id": 45,
+    "common_name": "Fennel",
+    "spacing": "4",
+    "icon": "/assets/fennel_icon.png"
+  },
+  {
+    "plant_id": 46,
+    "common_name": "Leek",
+    "spacing": "4",
+    "icon": "/assets/leek_icon.png"
+  },
+  {
+    "plant_id": 47,
+    "common_name": "Scallion",
+    "spacing": "1",
+    "icon": "/assets/scallion_icon.png"
+  },
+  {
+    "plant_id": 48,
+    "common_name": "Sweet Potato",
+    "spacing": "9",
+    "icon": "/assets/sweet_potato_icon.png"
+  },
+  {
+    "plant_id": 49,
+    "common_name": "Chard",
+    "spacing": "4",
+    "icon": "/assets/chard_icon.png"
+  },
+  {
+    "plant_id": 50,
+    "common_name": "Cilantro",
+    "spacing": "1",
+    "icon": "/assets/cilantro_icon.png"
+  },
+  {
+    "plant_id": 51,
+    "common_name": "Aloe Vera",
+    "spacing": "4",
+    "icon": "/assets/aloe_vera_icon.png"
+  },
+  {
+    "plant_id": 52,
+    "common_name": "Lavender",
+    "spacing": "4",
+    "icon": "/assets/lavender_icon.png"
+  },
+  {
+    "plant_id": 53,
+    "common_name": "Mint",
+    "spacing": "1",
+    "icon": "/assets/mint_icon.png"
+  },
+  {
+    "plant_id": 54,
+    "common_name": "Rosemary",
+    "spacing": "4",
+    "icon": "/assets/rosemary_icon.png"
+  },
+  {
+    "plant_id": 55,
+    "common_name": "Sage",
+    "spacing": "4",
+    "icon": "/assets/sage_icon.png"
+  },
+  {
+    "plant_id": 56,
+    "common_name": "Bay Leaf",
+    "spacing": "4",
+    "icon": "/assets/bay_leaf_icon.png"
+  },
+  {
+    "plant_id": 57,
+    "common_name": "Sweet Peas",
+    "spacing": "4",
+    "icon": "/assets/sweet_peas_icon.png"
+  },
+  {
+    "plant_id": 58,
+    "common_name": "Endive",
+    "spacing": "4",
+    "icon": "/assets/endive_icon.png"
+  },
+  {
+    "plant_id": 59,
+    "common_name": "Mustard",
+    "spacing": "1",
+    "icon": "/assets/mustard_icon.png"
+  },
+  {
+    "plant_id": 60,
+    "common_name": "Bok Choy",
+    "spacing": "4",
+    "icon": "/assets/bok_choy_icon.png"
+  },
+  {
+    "plant_id": 61,
+    "common_name": "Jalapeno",
+    "spacing": "4",
+    "icon": "/assets/jalapeno_icon.png"
+  },
+  {
+    "plant_id": 62,
+    "common_name": "Cilantro",
+    "spacing": "1",
+    "icon": "/assets/cilantro_icon.png"
+  },
+  {
+    "plant_id": 63,
+    "common_name": "Kohlrabi",
+    "spacing": "4",
+    "icon": "/assets/kohlrabi_icon.png"
+  },
+  {
+    "plant_id": 64,
+    "common_name": "Horseradish",
+    "spacing": "4",
+    "icon": "/assets/horseradish_icon.png"
+  },
+  {
+    "plant_id": 65,
+    "common_name": "Tomatillo",
+    "spacing": "4",
+    "icon": "/assets/tomatillo_icon.png"
+  },
+  {
+    "plant_id": 66,
+    "common_name": "Artichoke",
+    "spacing": "9",
+    "icon": "/assets/artichoke_icon.png"
+  },
+  {
+    "plant_id": 67,
+    "common_name": "Bamboo",
+    "spacing": "9",
+    "icon": "/assets/bamboo_icon.png"
+  },
+  {
+    "plant_id": 68,
+    "common_name": "Cilantro",
+    "spacing": "1",
+    "icon": "/assets/cilantro_icon.png"
+  },
+  {
+    "plant_id": 69,
+    "common_name": "Fiddlehead Fern",
+    "spacing": "4",
+    "icon": "/assets/fiddlehead_fern_icon.png"
+  },
+  {
+    "plant_id": 70,
+    "common_name": "Garbanzo Beans",
+    "spacing": "4",
+    "icon": "/assets/garbanzo_beans_icon.png"
+  },
+  {
+    "plant_id": 71,
+    "common_name": "Hibiscus",
+    "spacing": "4",
+    "icon": "/assets/hibiscus_icon.png"
+  },
+  {
+    "plant_id": 72,
+    "common_name": "Jerusalem Artichoke",
+    "spacing": "9",
+    "icon": "/assets/jerusalem_artichoke_icon.png"
+  },
+  {
+    "plant_id": 73,
+    "common_name": "Lemongrass",
+    "spacing": "4",
+    "icon": "/assets/lemongrass_icon.png"
+  },
+  {
+    "plant_id": 74,
+    "common_name": "Nasturtium",
+    "spacing": "4",
+    "icon": "/assets/nasturtium_icon.png"
+  },
+  {
+    "plant_id": 75,
+    "common_name": "Okra",
+    "spacing": "4",
+    "icon": "/assets/okra_icon.png"
+  },
+  {
+    "plant_id": 76,
+    "common_name": "Oregano",
+    "spacing": "1",
+    "icon": "/assets/oregano_icon.png"
+  },
+  {
+    "plant_id": 77,
+    "common_name": "Parsnip",
+    "spacing": "4",
+    "icon": "/assets/parsnip_icon.png"
+  },
+  {
+    "plant_id": 78,
+    "common_name": "Peach Tree",
+    "spacing": "36",
+    "icon": "/assets/peach_tree_icon.png"
+  },
+  {
+    "plant_id": 79,
+    "common_name": "Pear Tree",
+    "spacing": "36",
+    "icon": "/assets/pear_tree_icon.png"
+  },
+  {
+    "plant_id": 80,
+    "common_name": "Plum Tree",
+    "spacing": "36",
+    "icon": "/assets/plum_tree_icon.png"
+  },
+  {
+    "plant_id": 81,
+    "common_name": "Raspberry",
+    "spacing": "9",
+    "icon": "/assets/raspberry_icon.png"
+  },
+  {
+    "plant_id": 82,
+    "common_name": "Rhubarb",
+    "spacing": "4",
+    "icon": "/assets/rhubarb_icon.png"
+  },
+  {
+    "plant_id": 83,
+    "common_name": "Rosemary",
+    "spacing": "4",
+    "icon": "/assets/rosemary_icon.png"
+  },
+  {
+    "plant_id": 84,
+    "common_name": "Salsify",
+    "spacing": "4",
+    "icon": "/assets/salsify_icon.png"
+  },
+  {
+    "plant_id": 85,
+    "common_name": "Shiso",
+    "spacing": "1",
+    "icon": "/assets/shiso_icon.png"
+  },
+  {
+    "plant_id": 86,
+    "common_name": "Sorrel",
+    "spacing": "4",
+    "icon": "/assets/sorrel_icon.png"
+  },
+  {
+    "plant_id": 87,
+    "common_name": "Spinach",
+    "spacing": "1",
+    "icon": "/assets/spinach_icon.png"
+  },
+  {
+    "plant_id": 88,
+    "common_name": "Squash",
+    "spacing": "9",
+    "icon": "/assets/squash_icon.png"
+  },
+  {
+    "plant_id": 89,
+    "common_name": "Sunflower",
+    "spacing": "4",
+    "icon": "/assets/sunflower_icon.png"
+  },
+  {
+    "plant_id": 90,
+    "common_name": "Sweet Basil",
+    "spacing": "1",
+    "icon": "/assets/sweet_basil_icon.png"
+  },
+  {
+    "plant_id": 91,
+    "common_name": "Tomato",
+    "spacing": "4",
+    "icon": "/assets/tomato_icon.png"
+  },
+  {
+    "plant_id": 92,
+    "common_name": "Turnip",
+    "spacing": "4",
+    "icon": "/assets/turnip_icon.png"
+  },
+  {
+    "plant_id": 93,
+    "common_name": "Watermelon",
+    "spacing": "9",
+    "icon": "/assets/watermelon_icon.png"
+  },
+  {
+    "plant_id": 94,
+    "common_name": "Yarrow",
+    "spacing": "4",
+    "icon": "/assets/yarrow_icon.png"
+  },
+  {
+    "plant_id": 95,
+    "common_name": "Zucchini",
+    "spacing": "9",
+    "icon": "/assets/zucchini_icon.png"
+  },
+  {
+    "plant_id": 96,
+    "common_name": "Chicory",
+    "spacing": "4",
+    "icon": "/assets/chicory_icon.png"
+  },
+  {
+    "plant_id": 97,
+    "common_name": "Corn Salad",
+    "spacing": "1",
+    "icon": "/assets/corn_salad_icon.png"
+  },
+  {
+    "plant_id": 98,
+    "common_name": "Kumquat",
+    "spacing": "9",
+    "icon": "/assets/kumquat_icon.png"
+  },
+  {
+    "plant_id": 99,
+    "common_name": "Lima Beans",
+    "spacing": "4",
+    "icon": "/assets/lima_beans_icon.png"
+  },
+  {
+    "plant_id": 100,
+    "common_name": "Mizuna",
+    "spacing": "1",
+    "icon": "/assets/mizuna_icon.png"
+  }
+]

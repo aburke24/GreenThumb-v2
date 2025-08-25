@@ -79,7 +79,7 @@ export const getBedsApi = async (userId, gardenId) => {
 export const getBedByIdApi = async (userId, gardenId, bedId) => {
   console.log(`Fetching bed ${bedId} from garden ${gardenId} for user ${userId}...`);
   try {
-    const response = await fetch(`${BASE_URL}?userId=${userId}&gardenId=${gardenId}&bedId=${bedId}`);
+    const response = await fetch(`${BASE_URL}/beds?userId=${userId}&gardenId=${gardenId}&bedId=${bedId}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -103,6 +103,7 @@ export const getBedByIdApi = async (userId, gardenId, bedId) => {
  */
 export const updateBedApi = async (userId, gardenId, bedId, updateData) => {
   console.log(`Updating bed ${bedId} in garden ${gardenId} for user ${userId}...`);
+  console.log("Changeing bed name ",updateData )
   try {
     const response = await fetch(`${BASE_URL}/beds?userId=${userId}&gardenId=${gardenId}&bedId=${bedId}`, {
       method: 'PUT',

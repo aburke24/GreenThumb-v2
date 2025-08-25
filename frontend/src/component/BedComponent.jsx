@@ -119,7 +119,7 @@ const BedComponent = ({
             style={{
                 width: (isUnsaved ? currentWidth : width) * cellSize,
                 height: (isUnsaved ? currentHeight : height) * cellSize,
-                backgroundColor: '#3B2F2F',
+                backgroundColor: '#5b4343ff',
                 border: isUnsaved ? '2px dashed red' : '1px solid rgba(255,255,255,0.4)',
                 display: 'grid',
                 gridTemplateColumns: `repeat(${isUnsaved ? currentWidth : width}, 1fr)`,

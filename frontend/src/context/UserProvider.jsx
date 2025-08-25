@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { UserContext } from './UserContext';
 import { fetchUserApi } from '../utils/userUtil';
-import { getBedsApi } from '../utils/bedUtil';
+import { getBedsApi,getBedByIdApi  } from '../utils/bedUtil';
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [gardens, setGardens] = useState(null);
   const [loading, setLoading] = useState(true);
   const [beds, setBeds] = useState({});
+  const [bed,setBed] = useState(null);
 
   // The login function now takes the full user object directly
   const login = async (userData, token) => {
@@ -76,6 +77,24 @@ export function UserProvider({ children }) {
   }
 };
 
+ const refreshBed = async (gardenId, bedId) => {
+    if (!user || !user.id || !gardenId || !bedId) {
+      console.log("UserProvider: Cannot refresh single bed, missing user, garden, or bed ID.");
+      return;
+    }
+    try {
+      setLoading(true);
+      console.log(`UserProvider: Attempting to fetch bed with ID ${bedId} from garden ${gardenId}`);
+      const bedData = await getBedByIdApi(user.id, gardenId, bedId);
+      console.log("UserProvider: Single bed data fetched:", bedData);
+      setBed(bedData);
+    } catch (error) {
+      console.error('Failed to refresh beds:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const token = localStorage.getItem('authToken');
@@ -105,7 +124,7 @@ export function UserProvider({ children }) {
     checkSession();
   }, []); // Empty dependency array means this runs only once on mount
 
-  const value = { user, userId: user?.id, gardens, loading, login, logout, refreshGardens, refreshBeds, beds };
+  const value = { user, userId: user?.id, gardens, loading, login, logout, refreshGardens, refreshBeds, beds,refreshBed, bed };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
