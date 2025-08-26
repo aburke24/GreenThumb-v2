@@ -1,16 +1,21 @@
+// Bed.jsx
+
 import React, { useEffect, useRef, useState } from 'react';
 
 const Bed = ({
     width,
     height,
-    isUnsaved = false,
     bedLayout,
     onGridClick,
     activePlant,
-    isDeleteMode
+    isDeleteMode,
+    onCellHover, 
+    onCellLeave, 
 }) => {
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+    const [localHoveredCell, setLocalHoveredCell] = useState(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -24,7 +29,6 @@ const Bed = ({
         return () => resizeObserver.disconnect();
     }, []);
 
-    // ⬅️ Add a check here
     if (!bedLayout || bedLayout.length === 0 || bedLayout[0] === undefined) {
         console.warn("Bed.jsx: bedLayout is not yet available or is invalid.");
         return (
@@ -40,14 +44,9 @@ const Bed = ({
         );
     }
 
-    // Now, `bedLayout` is guaranteed to be a valid array.
     const cellSize = Math.min(dimensions.width / width, dimensions.height / height);
-
     const gridWidth = cellSize * width;
     const gridHeight = cellSize * height;
-
-    const bedPlants = [];
-    const visitedCells = new Set();
 
     const getPlantDimensions = (spacing) => {
         const s = parseInt(spacing);
@@ -56,14 +55,14 @@ const Bed = ({
         if (s === 9) return { width: 3, height: 3 };
         return { width: 1, height: 1 };
     };
-    
-    // The for loop is safe now
+
+    const bedPlants = [];
+    const visitedCells = new Set();
     for (let r = 0; r < height; r++) {
         for (let c = 0; c < width; c++) {
             if (bedLayout[r][c] !== null && !visitedCells.has(`${r}-${c}`)) {
                 const plant = bedLayout[r][c];
                 const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
-
                 bedPlants.push({
                     ...plant,
                     top: r,
@@ -71,7 +70,6 @@ const Bed = ({
                     plantWidth: plantW,
                     plantHeight: plantH,
                 });
-
                 for (let vr = r; vr < r + plantH; vr++) {
                     for (let vc = c; vc < c + plantW; vc++) {
                         visitedCells.add(`${vr}-${vc}`);
@@ -81,14 +79,52 @@ const Bed = ({
         }
     }
 
+    // Function to check if a plant can be placed at the hovered position
+    const canPlacePlant = (row, col) => {
+        if (!activePlant) return false;
+        const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
+        
+        // Check if the plant would go out of bounds
+        if (row + plantH > height || col + plantW > width) {
+            return false;
+        }
+
+        // Check for overlaps with existing plants
+        for (let r = row; r < row + plantH; r++) {
+            for (let c = col; c < col + plantW; c++) {
+                // Ensure r and c are within bedLayout bounds
+                if (r >= 0 && r < height && c >= 0 && c < width) {
+                    if (bedLayout[r][c] !== null) {
+                        return false;
+                    }
+                } else {
+                    // This case should ideally be caught by the out-of-bounds check above,
+                    // but good for robustness.
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
+    const handleCellHover = (rowIndex, colIndex) => {
+        setLocalHoveredCell({ row: rowIndex, col: colIndex });
+        onCellHover({ row: rowIndex, col: colIndex });
+    };
+
+    const handleMouseLeave = () => {
+        setLocalHoveredCell(null);
+        onCellLeave();
+    };
+
     return (
         <div
             ref={containerRef}
-            className="flex items-center justify-center bg-[#4E342E] border relative shadow-inner overflow-hidden w-full h-full"
+            className="flex items-center justify-center bg-neutral-800 relative shadow-inner overflow-hidden min-w-full min-h-full"
             style={{
-                border: isUnsaved ? '2px dashed #EF4444' : '1px solid rgba(255,255,255,0.4)',
                 cursor: isDeleteMode ? 'crosshair' : activePlant ? 'crosshair' : 'default',
             }}
+            onMouseLeave={handleMouseLeave}
         >
             <div
                 style={{
@@ -98,32 +134,58 @@ const Bed = ({
                 }}
             >
                 <div
-                    className="absolute inset-0 grid z-10"
+                    className="absolute inset-0 grid z-10 border-2 border-white"
                     style={{
                         gridTemplateColumns: `repeat(${width}, 1fr)`,
                         gridTemplateRows: `repeat(${height}, 1fr)`,
                     }}
                 >
                     {Array.from({ length: height }).map((_, rowIndex) =>
-                        Array.from({ length: width }).map((_, colIndex) => (
-                            <div
-                                key={`${rowIndex}-${colIndex}`}
-                                className="border border-white/10"
-                                onClick={() => {
-                                    if (!isDeleteMode) {
-                                        onGridClick(rowIndex, colIndex);
+                        Array.from({ length: width }).map((_, colIndex) => {
+                            const isOccupied = bedLayout[rowIndex][colIndex] !== null;
+                            let cellBgClass = isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]';
+
+                            // Preview color logic
+                            if (!isDeleteMode && activePlant && localHoveredCell) {
+                                const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
+                                const isHoveredArea = 
+                                    rowIndex >= localHoveredCell.row && 
+                                    rowIndex < localHoveredCell.row + plantH &&
+                                    colIndex >= localHoveredCell.col &&
+                                    colIndex < localHoveredCell.col + plantW;
+
+                                if (isHoveredArea) {
+                                    if (canPlacePlant(localHoveredCell.row, localHoveredCell.col)) {
+                                        cellBgClass = 'bg-green-500 opacity-50'; // Semi-transparent green for valid placement
+                                    } else {
+                                        cellBgClass = 'bg-red-500 opacity-50'; // Semi-transparent red for invalid placement
                                     }
-                                }}
-                            />
-                        ))
+                                }
+                            }
+
+                            return (
+                                <div
+                                    key={`${rowIndex}-${colIndex}`}
+                                    className={`border border-white/10 ${cellBgClass}`}
+                                    onClick={() => {
+                                        if (!isDeleteMode) {
+                                            onGridClick(rowIndex, colIndex);
+                                        }
+                                    }}
+                                    onMouseEnter={() => handleCellHover(rowIndex, colIndex)}
+                                />
+                            );
+                        })
                     )}
                 </div>
-
+                
+                {/* No separate plant preview div needed anymore, as the cells themselves change color */}
+                
                 {bedPlants.map((plant) => {
                     const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
                     return (
                         <div
-                            key={plant.id} // Use the unique ID as the key
+                            key={plant.id}
                             className="absolute z-20 flex items-center justify-center p-1"
                             style={{
                                 top: `${plant.y_position * cellSize}px`,

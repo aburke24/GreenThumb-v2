@@ -15,7 +15,7 @@ const UnplacedBedCard = ({ bed, selected, handleBedClick, handleDeleteBed, handl
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleDeleteBed(bed.id);
+          handleDeleteBed(bed.bed_id);
         }}
         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         title="Delete bed"

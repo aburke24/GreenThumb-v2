@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, Ruler, Box, Save } from 'lucide-react';
+import { ChevronLeft, Plus, Ruler, X, Save } from 'lucide-react';
 import { useUser } from '../hooks/UserUser';
 import AddBedModal from '../modal/AddBedModal';
 import { updateGardenApi } from '../utils/gardenUtil';
@@ -56,9 +56,21 @@ const GardenPage = () => {
     const gardenBeds = beds?.[gardenId] ?? [];
 
     const handleBack = () => {
+        const hasHeaderChanges = hasUnsavedChanges;
+
+        const hasUnsavedBedPositions = Object.keys(unsavedPositions).length > 0;
+
+        if (hasHeaderChanges || hasUnsavedBedPositions) {
+            const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+            if (!confirmed) {
+                // If the user clicks 'Cancel', do not navigate back.
+                return;
+            }
+        }
+        // If there are no unsaved changes or the user confirms, navigate back.
         refreshGardens();
         navigate(-1);
-    }
+    };
     const openAddBedModal = () => setIsAddBedOpen(true);
     const closeAddBedModal = () => setIsAddBedOpen(false);
     const toggleBeds = () => setIsBedsOpen(prev => !prev);
@@ -140,6 +152,14 @@ const GardenPage = () => {
         }
     };
 
+    const handleCancelChanges = () => {
+        if (garden) {
+            setGardenName(garden.garden_name);
+            setGardenWidth(garden.width.toString());
+            setGardenHeight(garden.height.toString());
+        }
+        setHasUnsavedChanges(false);
+    };
     const handleDeleteBed = async (bedId) => {
         if (!userId || !gardenId || !bedId) {
             console.error('Missing required parameters for bed deletion.');
@@ -157,10 +177,10 @@ const GardenPage = () => {
 
     const handleEditBed = (bed) => {
         console.log("Editing bed:", bed.bed_id);
-        refreshBed(gardenId,bed.bed_id);
-        refreshPlants(gardenId,bed.bed_id);
+        refreshBed(gardenId, bed.bed_id);
+        refreshPlants(gardenId, bed.bed_id);
         navigate(`/garden/${gardenId}/bed/${bed.bed_id}`);
-        
+
     };
 
     const handleMouseDown = () => {
@@ -349,6 +369,8 @@ const GardenPage = () => {
                             value={gardenWidth}
                             onChange={handleWidthChange}
                             className="w-24 px-3 py-2 bg-neutral-700 text-white rounded-lg"
+                            min="1"
+                            max="50"
                         />
                     </label>
                     <label className="flex items-center space-x-2 w-full sm:w-auto">
@@ -358,6 +380,8 @@ const GardenPage = () => {
                             value={gardenHeight}
                             onChange={handleHeightChange}
                             className="w-24 px-3 py-2 bg-neutral-700 text-white rounded-lg"
+                            min="1"
+                            max="50"
                         />
                     </label>
                     <button
@@ -370,6 +394,17 @@ const GardenPage = () => {
                     >
                         <Save className="w-5 h-5" />
                         <span>Save</span>
+                    </button>
+                    <button
+                        onClick={handleCancelChanges}
+                        disabled={!hasUnsavedChanges}
+                        className={`flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 rounded-lg transition w-full sm:w-auto ${hasUnsavedChanges
+                            ? 'bg-red-600 hover:bg-red-500'
+                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
+                            }`}
+                    >
+                        <X className="w-5 h-5" />
+                        <span>Cancel</span>
                     </button>
                 </div>
             </div>
