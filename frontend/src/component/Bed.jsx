@@ -119,32 +119,35 @@ const Bed = ({
                     )}
                 </div>
 
-                {bedPlants.map((plant) => (
-                    <div
-                        key={plant.id} // Use the unique ID as the key
-                        className="absolute z-20 flex items-center justify-center p-1"
-                        style={{
-                            top: `${plant.y_position * cellSize}px`,
-                            left: `${plant.x_position * cellSize}px`,
-                            width: `${plant.plantWidth * cellSize}px`,
-                            height: `${plant.plantHeight * cellSize}px`,
-                            cursor: isDeleteMode ? 'pointer' : 'default',
-                        }}
-                        onClick={(e) => {
-                            if (isDeleteMode) {
-                                e.stopPropagation();
-                                onGridClick(plant.y_position, plant.x_position);
-                            }
-                        }}
-                    >
-                        <img
-                            src={plant.icon}
-                            alt={plant.common_name}
-                            className="w-full h-full object-contain"
-                            style={{ pointerEvents: 'none' }}
-                        />
-                    </div>
-                ))}
+                {bedPlants.map((plant) => {
+                    const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                    return (
+                        <div
+                            key={plant.id} // Use the unique ID as the key
+                            className="absolute z-20 flex items-center justify-center p-1"
+                            style={{
+                                top: `${plant.y_position * cellSize}px`,
+                                left: `${plant.x_position * cellSize}px`,
+                                width: `${plantW * cellSize}px`,
+                                height: `${plantH * cellSize}px`,
+                                cursor: isDeleteMode ? 'pointer' : 'default',
+                            }}
+                            onClick={(e) => {
+                                if (isDeleteMode) {
+                                    e.stopPropagation();
+                                    onGridClick(plant.y_position, plant.x_position);
+                                }
+                            }}
+                        >
+                            <img
+                                src={plant.icon}
+                                alt={plant.common_name}
+                                className="w-full h-full object-contain"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

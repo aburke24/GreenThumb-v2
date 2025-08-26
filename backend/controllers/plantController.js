@@ -15,7 +15,7 @@ const plantModel = require('../models/plantModel');
 async function savePlants(req, res) {
     const { userId, gardenId, bedId } = req.query;
     const plantsArray = req.body;
-
+    console.log("Plants aree ", plantsArray);
     if (!userId || !gardenId || !bedId) {
         return res.status(400).json({ message: 'ERROR: userId, gardenId, and bedId are all required query parameters.' });
     }

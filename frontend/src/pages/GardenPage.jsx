@@ -11,7 +11,7 @@ import BedsPanel from '../component/BedsPanel';
 const GardenPage = () => {
     const { gardenId } = useParams();
     const navigate = useNavigate();
-    const { gardens, refreshGardens, refreshBeds, refreshBed, userId, beds, loading } = useUser();
+    const { gardens, refreshGardens, refreshBeds, refreshBed, userId, beds, loading, refreshPlants } = useUser();
 
     const [garden, setGarden] = useState(null);
     const [gardenName, setGardenName] = useState('');
@@ -156,8 +156,9 @@ const GardenPage = () => {
     };
 
     const handleEditBed = (bed) => {
-        console.log("Editing bed:", bed);
+        console.log("Editing bed:", bed.bed_id);
         refreshBed(gardenId,bed.bed_id);
+        refreshPlants(gardenId,bed.bed_id);
         navigate(`/garden/${gardenId}/bed/${bed.bed_id}`);
         
     };

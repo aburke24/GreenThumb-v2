@@ -13,7 +13,10 @@ import Bed from '../component/Bed';
 import PlantCatalog from '../PlantCatalog.json';
 import { useUser } from '../hooks/UserUser';
 import { updateBedApi } from '../utils/bedUtil';
+import { updatePlantsApi } from '../utils/plantsUtil';
+import { v4 as uuidv4 } from 'uuid';
 
+// Helper function to get plant dimensions based on spacing
 const getPlantDimensions = (spacing) => {
     const s = parseInt(spacing);
     if (s === 1) return { width: 1, height: 1 };
@@ -24,7 +27,7 @@ const getPlantDimensions = (spacing) => {
 
 const EditBedPage = () => {
     const { bedId, gardenId } = useParams();
-    const { userId,bed, refreshBed, loading } = useUser();
+    const { userId, bed, refreshBed, loading, refreshPlants, plants } = useUser();
 
     const navigate = useNavigate();
     const [bedName, setBedName] = useState('');
@@ -45,19 +48,21 @@ const EditBedPage = () => {
 
     const mainContentRef = useRef(null);
 
-    // Effect to populate local state when bed data is available from the context
+    // This useEffect populates the local state with bed and plants data
+    // It now correctly uses the 'plants' array from the context.
     useEffect(() => {
         if (bed) {
             setBedName(bed.name);
             setWidth(bed.width);
             setHeight(bed.height);
-            setPlantsInBed(bed.plants || []);
+        }
 
-            // Re-create bed layout grid
+        if (bed && plants) {
             const newLayout = Array.from({ length: bed.height }, () =>
                 Array.from({ length: bed.width }, () => null)
             );
-            (bed.plants || []).forEach(plant => {
+            
+            plants.forEach(plant => {
                 const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
                 for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
                     for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
@@ -68,10 +73,10 @@ const EditBedPage = () => {
                 }
             });
             setBedLayout(newLayout);
+            setPlantsInBed(plants);
         }
-    }, [bed]);
+    }, [bed, plants]); // Added 'plants' to the dependency array
 
-    // Other useEffect hooks for UI behavior
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 640);
@@ -87,7 +92,6 @@ const EditBedPage = () => {
         }
     }, []);
 
-    // ... (rest of the functions remain the same)
     const checkForHeaderChanges = (name, w, h) => {
         setHasUnsavedHeader(name !== bed.name || w !== bed.width || h !== bed.height);
     };
@@ -146,14 +150,8 @@ const EditBedPage = () => {
 
         const plantsDataToSave = { plants: plantsInBed };
         try {
-            const response = await fetch(`/api/beds/${bedId}/plants`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(plantsDataToSave),
-            });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            console.log('Plants saved successfully:', await response.json());
-            refreshBed(gardenId, bedId);
+            await updatePlantsApi(userId, gardenId, bedId, plantsDataToSave.plants);
+            refreshPlants(gardenId,bedId);
         } catch (error) {
             console.error('Failed to save plants:', error);
             setHasUnsavedPlants(true);
@@ -161,6 +159,7 @@ const EditBedPage = () => {
             setIsSaving(false);
         }
     };
+
 
     const handleClearBed = () => {
         setBedLayout(Array.from({ length: height }, () => Array.from({ length: width }, () => null)));
@@ -217,15 +216,16 @@ const EditBedPage = () => {
         }
 
         const newPlant = {
-            id: Date.now(),
+            id: uuidv4(),
             plant_id: activePlant.plant_id,
             x_position: col,
             y_position: row,
             plant_role: "main",
-            common_name: activePlant.common_name,
+            name: activePlant.common_name,
             spacing: activePlant.spacing,
             icon: activePlant.icon
         };
+
         setPlantsInBed((prevPlants) => [...prevPlants, newPlant]);
         const newLayout = bedLayout.map((r) => [...r]);
         for (let r = row; r < row + plantH; r++) {
@@ -247,7 +247,6 @@ const EditBedPage = () => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-neutral-800 text-white font-sans antialiased overflow-hidden">
-            {/* ... (rest of the component's JSX remains the same) */}
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-neutral-900 border-b border-neutral-700">
                 <div className="flex items-center justify-between w-full sm:w-auto mb-4 sm:mb-0">
