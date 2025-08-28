@@ -1,9 +1,9 @@
-// src/components/BedComponent.jsx
 import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 
 const BedComponent = ({
     bed,
+    plants = [], // Add plants prop
     isUnsaved = false,
     onConfirm,
     onCancel,
@@ -16,8 +16,7 @@ const BedComponent = ({
     const [currentHeight, setCurrentHeight] = useState(height);
     const [currentTop, setCurrentTop] = useState(top_position);
     const [currentLeft, setCurrentLeft] = useState(left_position);
-    const [isResizing, setIsResizing] = useState(false); 
-
+    const [isResizing, setIsResizing] = useState(false);
 
     useEffect(() => {
         setCurrentWidth(width);
@@ -96,22 +95,61 @@ const BedComponent = ({
         window.addEventListener('mouseup', stopDrag);
     };
 
+    // Helper function to get plant dimensions based on spacing (same as EditBedPage)
+    const getPlantDimensions = (spacing) => {
+        const s = parseInt(spacing);
+        if (s === 1) return { width: 1, height: 1 };
+        if (s === 4) return { width: 2, height: 2 };
+        if (s === 9) return { width: 3, height: 3 };
+        return { width: 1, height: 1 };
+    };
+
+    // Process plants to get their rendered positions and dimensions
+    const processedPlants = plants.map(plant => {
+        const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+        return {
+            ...plant,
+            plantWidth: plantW,
+            plantHeight: plantH,
+        };
+    });
+
+    // Render grid cells (with background color if occupied)
     const renderGridCells = () => {
         const cols = isUnsaved ? currentWidth : width;
         const rows = isUnsaved ? currentHeight : height;
 
-        return Array.from({ length: cols * rows }).map((_, i) => (
-            <div
-                key={i}
-                style={{
-                    borderRight: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                    width: '100%',
-                    height: '100%',
-                    boxSizing: 'border-box',
-                }}
-            />
-        ));
+        return Array.from({ length: cols * rows }).map((_, i) => {
+            const x = i % cols;
+            const y = Math.floor(i / cols);
+
+            // Check if any plant covers this cell
+            const isOccupied = processedPlants.some(plant => {
+                return (
+                    x >= plant.x_position &&
+                    x < plant.x_position + plant.plantWidth &&
+                    y >= plant.y_position &&
+                    y < plant.y_position + plant.plantHeight
+                );
+            });
+
+            // Cell background color classes based on occupancy
+            let cellBgClass = isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]';
+
+            return (
+                <div
+                    key={i}
+                    className={`${cellBgClass}`}
+                    style={{
+                        borderRight: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+                        width: '100%',
+                        height: '100%',
+                        boxSizing: 'border-box',
+                    }}
+                />
+            );
+        });
     };
 
     return (
@@ -129,6 +167,44 @@ const BedComponent = ({
             }}
         >
             {renderGridCells()}
+
+            {/* Render Plants */}
+            {processedPlants.map((plant) => (
+                <div
+                    key={plant.id || plant.plant_id}
+                    className="absolute z-20 items-center justify-center" // Added flex for centering
+                    style={{
+                        top: `${plant.y_position * cellSize}px`,
+                        left: `${plant.x_position * cellSize}px`,
+                        width: `${plant.plantWidth * cellSize}px`,
+                        height: `${plant.plantHeight * cellSize}px`,
+                        pointerEvents: 'none',
+                        overflow: 'visible',
+                    }}
+                    title={`${plant.plant_name || plant.name} - ${plant.variety || 'No variety'}`}
+                >
+                    {plant.icon ? (
+                        <img
+                            src={plant.icon}
+                            alt={plant.plant_name || plant.name}
+                            style={{
+                                pointerEvents: 'none',
+                                width: '85%', // Slightly smaller to give padding
+                                height: '85%', // Slightly smaller to give padding
+                                objectFit: 'contain',
+                            }}
+                        />
+                    ) : (
+                        // Fallback if no icon is available
+                        <div
+                            className="w-full h-full rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold"
+                            style={{ fontSize: `${Math.max(6, cellSize * 0.3)}px` }}
+                        >
+                            {(plant.plant_name || plant.name)?.charAt(0)?.toUpperCase() || 'P'}
+                        </div>
+                    )}
+                </div>
+            ))}
 
             {isUnsaved && onConfirm && (
                 <button

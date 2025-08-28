@@ -24,7 +24,7 @@
     "icon": "/assets/basil_icon.png"
   },
   {
-    "plant_5": 5,
+    "plant_id": 5,
     "common_name": "Zucchini",
     "spacing": "9",
     "icon": "/assets/zucchini_icon.png"

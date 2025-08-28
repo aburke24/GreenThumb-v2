@@ -39,10 +39,9 @@ export function UserProvider({ children }) {
   };
 
   const getGarden = (gardenId) => {
-  const foundGarden = user.gardens.find(garden => {
+  const foundGarden = gardens.find(garden => {
     return garden.id == gardenId;
   });
-
   if (!foundGarden) {
     console.error(`Garden with ID ${gardenId} not found.`);
     return null;
@@ -128,7 +127,15 @@ export function UserProvider({ children }) {
     }
 
   }
-  
+  const getBedPlants= async(gardenId,bedId) =>{
+    console.log("The plants are being retrieved");
+    if (!user || !user.id || !gardenId || !bedId) {
+      console.log("UserProvider: Cannot refresh single bed, missing user, garden, or bed ID.");
+      return;
+    }
+    const plantData = await getPlantsApi(user.id, gardenId, bedId);
+    return plantData || [];
+  }
 
   useEffect(() => {
     const checkSession = async () => {
@@ -155,7 +162,7 @@ export function UserProvider({ children }) {
   }, []);
 
   // values needed elsewhere
-  const value = { user, userId: user?.id, gardens, getGarden, loading, login, logout, refreshGardens, refreshBeds, beds, refreshBed, bed, refreshPlants, plants, setPlants, setBed, bedId: bed?.id };
+  const value = { user, userId: user?.id, gardens, getGarden, loading, login, logout, refreshGardens, refreshBeds, beds, refreshBed, bed, refreshPlants, plants, setPlants, setBed, bedId: bed?.id, getBedPlants };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

@@ -69,7 +69,8 @@ const EditBedPage = () => {
 
     useEffect(() => {
         if (allPlants && allPlants.length > 0) {
-            setActivePlantButtons(allPlants.slice(0, 5));
+            console.log("all of the plants", allPlants);
+            setActivePlantButtons(allPlants.slice(0, 6));
         }
     }, [allPlants]);
 
@@ -296,6 +297,7 @@ const EditBedPage = () => {
 
         if (!activePlant) return;
 
+        console.log("the active plant is ", activePlant);
         const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
         if (row + plantH > height || col + plantW > width) {
             return;

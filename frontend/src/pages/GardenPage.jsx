@@ -11,7 +11,7 @@ import BedsPanel from '../component/BedsPanel';
 const GardenPage = () => {
     const { gardenId } = useParams();
     const navigate = useNavigate();
-    const { gardens, refreshGardens, refreshBeds, refreshBed, userId, beds, loading, refreshPlants } = useUser();
+    const { gardens, refreshGardens, refreshBeds, refreshBed, userId, beds, loading, refreshPlants, getBedPlants } = useUser();
 
     const [garden, setGarden] = useState(null);
     const [gardenName, setGardenName] = useState('');
@@ -411,6 +411,7 @@ const GardenPage = () => {
 
             {/* Main Garden Area */}
             <GardenView
+                gardenId={gardenId}
                 gardenWidth={parseInt(gardenWidth)}
                 gardenHeight={parseInt(gardenHeight)}
                 displayWidth={displayWidth}
@@ -421,11 +422,12 @@ const GardenPage = () => {
                 unsavedPositions={unsavedPositions}
                 setUnsavedPositions={setUnsavedPositions}
                 onConfirmPlacement={onConfirmPlacement}
-                onCancelPlacement={onCancelPlacement} // Pass the new cancel handler
+                onCancelPlacement={onCancelPlacement}
                 onGardenClick={onGardenClick}
                 setSelectedBedId={setSelectedBedId}
                 onEditBed={handleEditBed}
                 onUnplaceBed={onUnplaceBed}
+                getBedPlants={getBedPlants} // Add this line - pass the function from useUser hook
             />
 
             {/* Bottom Panel with Unplaced Beds */}
