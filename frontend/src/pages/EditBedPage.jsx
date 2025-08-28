@@ -15,6 +15,7 @@ import { useUser } from '../hooks/UserUser';
 import { updateBedApi } from '../utils/bedUtil';
 import { updatePlantsApi } from '../utils/plantsUtil';
 import { v4 as uuidv4 } from 'uuid';
+import PlantCatalogModal from '../modal/PlantCatalogModal';
 
 // Helper function to get plant dimensions based on spacing
 const getPlantDimensions = (spacing) => {
@@ -37,6 +38,7 @@ const EditBedPage = () => {
     const [hasUnsavedPlants, setHasUnsavedPlants] = useState(false);
     const [isHeaderOpen, setIsHeaderOpen] = useState(false);
     const [showPlantList, setShowPlantList] = useState(false);
+    const [showPlantCatalogModal, setShowPlantCatalogModal] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -45,13 +47,12 @@ const EditBedPage = () => {
     const [bedLayout, setBedLayout] = useState([]);
     const [plantsInBed, setPlantsInBed] = useState([]);
     const [allPlants, setAllPlants] = useState([]);
-
     const bedContainerRef = useRef(null);
     const [bedContainerDimensions, setBedContainerDimensions] = useState({ width: 0, height: 0 });
     const [garden, setGarden] = useState('');
-
-    // === NEW STATE FOR HOVER PREVIEW ===
     const [hoveredCell, setHoveredCell] = useState(null);
+    const [activePlantButtons, setActivePlantButtons] = useState(Array(5).fill(null));
+    const [editingButtonIndex, setEditingButtonIndex] = useState(null);
 
     // Use ResizeObserver to get the available dimensions for the bed grid
     useEffect(() => {
@@ -66,7 +67,13 @@ const EditBedPage = () => {
         return () => resizeObserver.disconnect();
     }, []);
 
-    // This useEffect populates the local state with bed and plants data
+    useEffect(() => {
+        if (allPlants && allPlants.length > 0) {
+            setActivePlantButtons(allPlants.slice(0, 5));
+        }
+    }, [allPlants]);
+
+    // Populate local state with bed and plants data
     useEffect(() => {
         if (bed) {
             setBedName(bed.name);
@@ -159,7 +166,6 @@ const EditBedPage = () => {
     };
 
     const handleSaveHeader = async () => {
-        // Check if bed dimensions exceed garden dimensions
         if (width > garden.width || height > garden.height) {
             alert("Bed dimensions cannot be larger than the garden's dimensions. Please adjust the width and height.");
             return;
@@ -183,6 +189,7 @@ const EditBedPage = () => {
             setIsSaving(false);
         }
     };
+
     const handleCancelHeaderChanges = () => {
         setBedName(bed.bed_name);
         setWidth(bed.bed_width);
@@ -207,8 +214,19 @@ const EditBedPage = () => {
             setIsSaving(false);
         }
     };
+
+    const handleChoosePlantForButton = (plant) => {
+        if (editingButtonIndex !== null) {
+            const updatedButtons = [...activePlantButtons];
+            updatedButtons[editingButtonIndex] = plant;
+            setActivePlantButtons(updatedButtons);
+            setActivePlant(plant); // Set the newly selected plant as active
+            setShowPlantCatalogModal(false);
+            setEditingButtonIndex(null);
+        }
+    };
+
     const handleCancelPlantChanges = () => {
-        // Revert plant state to original plants data
         const newLayout = Array.from({ length: bed.height }, () =>
             Array.from({ length: bed.width }, () => null)
         );
@@ -227,8 +245,7 @@ const EditBedPage = () => {
         setHasUnsavedPlants(false);
     };
 
-
-const handleClearBed = () => {
+    const handleClearBed = () => {
         const confirmed = window.confirm("Are you sure you want to clear all plants from this bed? This action cannot be undone.");
 
         if (confirmed) {
@@ -238,18 +255,15 @@ const handleClearBed = () => {
         }
     };
 
-    const handleSelectPlant = (plant) => {
-        setActivePlant(plant);
-    };
-
     const handlePlantListBack = () => {
         setShowPlantList(false);
         setActivePlant(null);
     };
 
-    const handleOpenAddPlant = () => { setShowPlantList(true) };
-    
-    // === NEW HOVER HANDLERS ===
+    const handleOpenAddPlant = () => {
+        setShowPlantList(true);
+    };
+
     const handleCellHover = (coords) => {
         setHoveredCell(coords);
     };
@@ -352,8 +366,7 @@ const handleClearBed = () => {
                 </div>
 
                 <div
-                    className={`${isHeaderOpen ? 'flex' : 'hidden'
-                        } flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm font-medium w-full sm:w-auto sm:flex`}
+                    className={`${isHeaderOpen ? 'flex' : 'hidden'} flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm font-medium w-full sm:w-auto sm:flex`}
                 >
                     <input
                         type="number"
@@ -373,7 +386,6 @@ const handleClearBed = () => {
                         min="1"
                         max={garden.height}
                     />
-                    {/* ⬅️ Header Save Button */}
                     <button
                         onClick={handleSaveHeader}
                         disabled={!hasUnsavedHeader || isSaving}
@@ -386,13 +398,11 @@ const handleClearBed = () => {
                         <Save className="w-5 h-5" />
                         <span>{isSaving ? 'Saving...' : 'Save Bed Info'}</span>
                     </button>
-
-                    {/* Header Cancel Button */}
                     <button
                         onClick={handleCancelHeaderChanges}
                         disabled={!hasUnsavedHeader || isSaving}
                         className={`flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 rounded-lg transition w-full sm:w-auto
-            ${!hasUnsavedHeader || isSaving
+                            ${!hasUnsavedHeader || isSaving
                                 ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                 : 'bg-red-600 hover:bg-red-500'
                             }`}
@@ -405,9 +415,7 @@ const handleClearBed = () => {
 
             {/* MAIN CONTENT */}
             <div className="flex flex-1 flex-col sm:flex-row p-6 pb-16 sm:pb-6 gap-6 relative">
-                {/* LEFT: Bed Grid container */}
                 <div ref={bedContainerRef} className="flex-1 flex justify-center items-center rounded-xl p-4">
-                    {/* === UPDATED BED COMPONENT PROPS === */}
                     <Bed
                         width={width}
                         height={height}
@@ -428,7 +436,6 @@ const handleClearBed = () => {
                     <div className="flex flex-row justify-center space-x-4 sm:flex-col sm:space-x-0 sm:space-y-4 sm:bg-neutral-700 sm:rounded-xl sm:p-4">
                         {!showPlantList ? (
                             <>
-                                {/* ⬅️ Plant Save Button */}
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode(false);
@@ -447,13 +454,11 @@ const handleClearBed = () => {
                                     <Save className="w-6 h-6 text-white" />
                                     <Tooltip text={isSaving ? 'Saving...' : 'Save Plants'} />
                                 </button>
-
-                                {/* Plant Cancel Button */}
                                 <button
                                     onClick={handleCancelPlantChanges}
                                     disabled={!hasUnsavedPlants || isSaving}
                                     className={`group rounded-full p-3 flex items-center justify-center relative transition
-                    ${isSaving
+                                        ${isSaving
                                             ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                             : hasUnsavedPlants
                                                 ? 'bg-red-500 hover:bg-red-400'
@@ -464,12 +469,11 @@ const handleClearBed = () => {
                                     <X className="w-6 h-6 text-white" />
                                     <Tooltip text="Cancel Plant Changes" />
                                 </button>
-                                {/* Add Plant Button */}
                                 <button
                                     onClick={() => {
+                                        console.log("Add Plants button clicked");
                                         handleOpenAddPlant();
                                         setIsDeleteMode(false);
-                                        console.log("Delete mode after Add Plant clicked:", false);
                                     }}
                                     className="group bg-emerald-600 rounded-full p-3 flex items-center justify-center hover:bg-emerald-500 relative"
                                     aria-label="Add plant"
@@ -477,8 +481,6 @@ const handleClearBed = () => {
                                     <PlusCircle className="w-6 h-6 text-white" />
                                     <Tooltip text="Add plant" />
                                 </button>
-
-                                {/* Delete Mode Toggle Button */}
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode((prev) => !prev);
@@ -494,8 +496,6 @@ const handleClearBed = () => {
                                     <Trash2 className="w-6 h-6 text-white" />
                                     <Tooltip text="Delete plant" />
                                 </button>
-
-                                {/* Clear Bed Button */}
                                 <button
                                     onClick={() => {
                                         handleClearBed();
@@ -518,35 +518,55 @@ const handleClearBed = () => {
                                     <X className="w-6 h-6 text-white" />
                                     <Tooltip text="Back" />
                                 </button>
-                                {allPlants.map((plant) => (
-                                    <button
-                                        key={plant.plant_id}
-                                        onClick={() => handleSelectPlant(plant)}
-                                        className={`group w-24 h-24 flex flex-col items-center justify-center relative text-white font-medium ${activePlant?.plant_id === plant.plant_id
-                                            ? 'bg-blue-600 ring-2 ring-offset-2 ring-blue-400'
-                                            : 'bg-neutral-800 hover:bg-neutral-700'
-                                            } transition-all duration-200`}
-                                        aria-label={`Select ${plant.common_name}`}
-                                    >
-                                        <img
-                                            src={plant.icon}
-                                            alt={plant.common_name}
-                                            className="w-12 h-12 object-contain" 
-                                        />
-                                        <span className="text-xs">{plant.common_name}</span>
-                                        <Tooltip text={plant.common_name} />
-                                    </button>
+                                {activePlantButtons.map((plant, index) => (
+                                    <div key={index} className="relative group w-24 h-24">
+                                        <button
+                                            onClick={() => setActivePlant(plant)}
+                                            className={`w-full h-full flex flex-col items-center justify-center text-white font-medium rounded
+                                                ${activePlant?.plant_id === plant?.plant_id
+                                                    ? 'bg-blue-600 ring-2 ring-offset-2 ring-blue-400'
+                                                    : 'bg-neutral-800 hover:bg-neutral-700'}
+                                                transition-all duration-200`}
+                                        >
+                                            {plant ? (
+                                                <>
+                                                    <img src={plant.icon} alt={plant.common_name} className="w-12 h-12 object-contain" />
+                                                    <span className="text-xs text-center px-1">{plant.common_name}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">+ Add Plant</span>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                console.log("Edit button clicked for index:", index);
+                                                setEditingButtonIndex(index);
+                                                setShowPlantCatalogModal(true);
+                                            }}
+                                            className="absolute top-1 right-1 p-1 bg-neutral-700 rounded-full opacity-0 group-hover:opacity-100 hover:bg-neutral-600 transition"
+                                            aria-label="Edit plant slot"
+                                        >
+                                            <Pencil className="w-4 h-4 text-white" />
+                                        </button>
+                                    </div>
                                 ))}
                             </>
                         )}
                     </div>
                 </div>
             </div>
+            <PlantCatalogModal
+                isOpen={showPlantCatalogModal}
+                onClose={() => setShowPlantCatalogModal(false)}
+                onSelect={handleChoosePlantForButton}
+                selectedPlantId={editingButtonIndex !== null ? activePlantButtons[editingButtonIndex]?.plant_id : null}
+                activePlantButtons={activePlantButtons}
+            />
         </div>
     );
 };
 
-// Tooltip component defined outside the main function
+// Tooltip component
 const Tooltip = ({ text }) => (
     <span className="absolute bottom-full mb-2 px-2 py-1 text-xs rounded bg-black text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
         {text}

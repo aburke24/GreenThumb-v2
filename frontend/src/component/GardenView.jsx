@@ -1,7 +1,6 @@
 import React from 'react';
 import { Pencil, Ban } from 'lucide-react';
 import BedComponent from './BedComponent';
-import Tooltip from './Tooltip';
 
 const GardenView = ({
     gardenWidth,
@@ -172,28 +171,26 @@ const GardenView = ({
                                 />
                                 {isSelected && !isUnsaved && (
                                     <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">
-                                        <Tooltip text="Edit Bed">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onEditBed(bed);
-                                                }}
-                                                className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip text="Unplace Bed">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onUnplaceBed(bed);
-                                                }}
-                                                className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
-                                            >
-                                                <Ban className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditBed(bed);
+                                            }}
+                                            className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
+                                            title="Edit Bed"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onUnplaceBed(bed);
+                                            }}
+                                            className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
+                                            title="Unplace Bed"
+                                        >
+                                            <Ban className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 )}
                             </div>

@@ -128,6 +128,7 @@ export function UserProvider({ children }) {
     }
 
   }
+  
 
   useEffect(() => {
     const checkSession = async () => {
