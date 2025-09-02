@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { createBedApi } from '../utils/bedUtil'; // adjust path accordingly
+import { createBedApi } from '../utils/bedUtil';
+import { useUser } from '../hooks/UserUser';
 
 const AddBedModal = ({ isOpen, onClose, userId, gardenId, onSuccess }) => {
   const [bedName, setBedName] = useState('');
@@ -7,23 +8,55 @@ const AddBedModal = ({ isOpen, onClose, userId, gardenId, onSuccess }) => {
   const [height, setHeight] = useState(5);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { getGarden } = useUser();
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    
+    // Basic validation for name field
     if (!bedName.trim()) {
       setError('Bed name is required');
       return;
     }
-    setError(null);
+    
+    // Get the parent garden's dimensions for validation
+    const garden = getGarden(gardenId);
+    if (!garden) {
+        setError('Garden not found.');
+        return;
+    }
+    const maxWidth = garden.width;
+    const maxHeight = garden.height;
+
+    // Validate bed dimensions
+    const bedWidth = Number(width);
+    const bedHeight = Number(height);
+    
+    if (bedWidth <= 0 || bedHeight <= 0) {
+        setError('Width and height must be positive numbers.');
+        return;
+    }
+
+    if (bedWidth > maxWidth) {
+        setError(`Width cannot be greater than the garden's width (${maxWidth}ft).`);
+        return;
+    }
+
+    if (bedHeight > maxHeight) {
+        setError(`Height cannot be greater than the garden's height (${maxHeight}ft).`);
+        return;
+    }
+
     setLoading(true);
 
     try {
       await createBedApi(userId, gardenId, {
         name: bedName.trim(),
-        width: Number(width),
-        height: Number(height),
+        width: bedWidth,
+        height: bedHeight,
         top_position: -1,
         left_position: -1,
       });
@@ -32,8 +65,8 @@ const AddBedModal = ({ isOpen, onClose, userId, gardenId, onSuccess }) => {
       setWidth(5);
       setHeight(5);
  
-      onSuccess(); // notify parent to refresh beds
-      onClose();   // close the modal
+      onSuccess(); // Notify parent to refresh beds
+      onClose();   // Close the modal
     } catch (apiError) {
       setError(apiError.message || 'Failed to create bed');
     } finally {

@@ -8,13 +8,15 @@ const plantModel = require('../models/plantModel');
 
 /**
  * Controller to save a full array of plants.
- * This function will replace the existing plants in a bed with the new array.
+ * This function replaces the existing plants in a bed with the new array.
  * @param {object} req - The request object.
  * @param {object} res - The response object.
  */
 async function savePlants(req, res) {
     const { userId, gardenId, bedId } = req.query;
     const plantsArray = req.body;
+
+    console.log("Plants array:", plantsArray);
 
     if (!userId || !gardenId || !bedId) {
         return res.status(400).json({ message: 'ERROR: userId, gardenId, and bedId are all required query parameters.' });
@@ -29,7 +31,7 @@ async function savePlants(req, res) {
         res.status(200).json({ message: `Successfully saved all plants to bed ${bedId}.` });
     } catch (error) {
         console.error('Error saving plants:', error);
-        res.status(500).json({ message: 'ERROR: Internal server error' });
+        res.status(500).json({ message: `ERROR: Failed to save plants - ${error.message || 'Internal server error'}` });
     }
 }
 
@@ -50,9 +52,10 @@ async function getPlantsInBed(req, res) {
         res.status(200).json(plants);
     } catch (error) {
         console.error('Error fetching plants for bed:', error);
-        res.status(500).json({ message: 'ERROR: Internal server error' });
+        res.status(500).json({ message: `ERROR: Failed to fetch plants - ${error.message || 'Internal server error'}` });
     }
 }
+
 
 /**
  * Controller function to get all plants from the catalog.

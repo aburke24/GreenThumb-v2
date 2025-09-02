@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pencil, Ban } from 'lucide-react';
 import BedComponent from './BedComponent';
 
 const GardenView = ({
+    gardenId,
     gardenWidth,
     gardenHeight,
     beds = [],
@@ -15,16 +16,43 @@ const GardenView = ({
     setSelectedBedId,
     setUnsavedPositions,
     onEditBed,
-    onUnplaceBed
+    onUnplaceBed,
+    getBedPlants,
 }) => {
     const cellSize = 10;
     const [hoverCell, setHoverCell] = React.useState(null);
+    const [bedPlants, setBedPlants] = useState({}); 
 
     // Get the selected bed's data, including its dimensions
     const selectedBed = beds.find(bed => bed.bed_id === selectedBedId);
     // Use the unsaved dimensions if they exist, otherwise use the bed's original dimensions
     const hoverBedWidth = unsavedPositions[selectedBedId]?.width || selectedBed?.width || 1;
     const hoverBedHeight = unsavedPositions[selectedBedId]?.height || selectedBed?.height || 1;
+
+    // Fetch plants for all beds when beds change
+    useEffect(() => {
+        const fetchPlantsForBeds = async () => {
+            const plantsData = {};
+            
+            for (const bed of beds) {
+                if (bed.bed_id && getBedPlants) {
+                    try {
+                        const plants = await getBedPlants(gardenId,bed.bed_id);
+                        plantsData[bed.bed_id] = plants || [];
+                    } catch (error) {
+                        console.error(`Failed to fetch plants for bed ${bed.bed_id}:`, error);
+                        plantsData[bed.bed_id] = [];
+                    }
+                }
+            }
+            
+            setBedPlants(plantsData);
+        };
+
+        if (beds.length > 0) {
+            fetchPlantsForBeds();
+        }
+    }, [beds, getBedPlants]);
 
     // Handle resize from BedComponent
     const handleResize = ({ bed_id, newWidth, newHeight }) => {
@@ -127,7 +155,7 @@ const GardenView = ({
                     />
                 )}
 
-                {/* Render beds */}
+                {/* Render beds with plant data */}
                 {beds.map((bed) => {
                     const isUnsaved = bed.bed_id in unsavedPositions;
                     const unsavedData = unsavedPositions[bed.bed_id];
@@ -164,6 +192,7 @@ const GardenView = ({
                             >
                                 <BedComponent
                                     bed={currentBedData}
+                                    plants={bedPlants[bed.bed_id] || []} // Pass plant data
                                     isUnsaved={isUnsaved}
                                     onConfirm={(newBedData) => onConfirmPlacement(bed.bed_id, newBedData)}
                                     onCancel={() => onCancelPlacement(bed.bed_id)}

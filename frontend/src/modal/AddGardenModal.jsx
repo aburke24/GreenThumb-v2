@@ -17,9 +17,24 @@ const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
         e.preventDefault();
         setFormError('');
 
-        // Basic validation
+        // Basic validation for empty fields
         if (!newGardenData.garden_name || !newGardenData.width || !newGardenData.height) {
             setFormError('Please fill in all fields.');
+            return;
+        }
+
+        // Parse numerical values from the input
+        const width = Number(newGardenData.width);
+        const height = Number(newGardenData.height);
+        
+        // Validation for max and negative values
+        if (width <= 0 || height <= 0) {
+            setFormError('Width and height must be positive numbers.');
+            return;
+        }
+        
+        if (width > 50 || height > 50) {
+            setFormError('Width and height cannot be greater than 50.');
             return;
         }
 
@@ -28,12 +43,12 @@ const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
             const createdGarden = await createGardenApi(
                 user.id,
                 newGardenData.garden_name,
-                newGardenData.width,
-                newGardenData.height
+                width,
+                height
             );
             console.log("Garden created successfully:", createdGarden);
-            onGardenCreated(createdGarden); // Call the parent function to update state
-            onClose(); // Close the modal
+            onGardenCreated(createdGarden);
+            onClose();
         } catch (error) {
             console.error('Error creating garden:', error);
             setFormError(error.message || 'Failed to create garden.');

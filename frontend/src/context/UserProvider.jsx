@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { UserContext } from './UserContext';
 import { fetchUserApi } from '../utils/userUtil';
-import { getBedsApi } from '../utils/bedUtil';
+import { getBedsApi, getBedByIdApi } from '../utils/bedUtil';
+import { getPlantsApi } from '../utils/plantsUtil';
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [gardens, setGardens] = useState(null);
   const [loading, setLoading] = useState(true);
   const [beds, setBeds] = useState({});
+  const [bed, setBed] = useState(null);
+  const [plants, setPlants] = useState([]);
 
   // The login function now takes the full user object directly
   const login = async (userData, token) => {
@@ -35,6 +38,18 @@ export function UserProvider({ children }) {
     }
   };
 
+  const getGarden = (gardenId) => {
+  const foundGarden = gardens.find(garden => {
+    return garden.id == gardenId;
+  });
+  if (!foundGarden) {
+    console.error(`Garden with ID ${gardenId} not found.`);
+    return null;
+  }
+
+  return foundGarden;
+};
+
   const logout = () => {
     setUser(null);
     setGardens(null);
@@ -43,7 +58,7 @@ export function UserProvider({ children }) {
     console.log('Logged out successfully.');
   };
 
-    const refreshGardens = async () => {
+  const refreshGardens = async () => {
     if (!user || !user.id) {
       console.log("Cannot refresh gardens: user is not logged in.");
       return;
@@ -60,21 +75,67 @@ export function UserProvider({ children }) {
   };
 
   const refreshBeds = async (gardenId) => {
-  if (!user || !user.id || !gardenId) return;
+    if (!user || !user.id || !gardenId) return;
 
-  try {
-    setLoading(true);
-    const bedsData = await getBedsApi(user.id, gardenId);
-    setBeds(prev => ({
-      ...prev,
-      [gardenId]: bedsData
-    }));
-  } catch (error) {
-    console.error('Failed to refresh beds:', error);
-  } finally {
-    setLoading(false);
+    try {
+      setLoading(true);
+      const bedsData = await getBedsApi(user.id, gardenId);
+      setBeds(prev => ({
+        ...prev,
+        [gardenId]: bedsData
+      }));
+    } catch (error) {
+      console.error('Failed to refresh beds:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshBed = async (gardenId, bedId) => {
+    if (!user || !user.id || !gardenId || !bedId) {
+      console.log("UserProvider: Cannot refresh single bed, missing user, garden, or bed ID.");
+      return;
+    }
+    try {
+      setLoading(true);
+      console.log(`UserProvider: Attempting to fetch bed with ID ${bedId} from garden ${gardenId}`);
+      const bedData = await getBedByIdApi(user.id, gardenId, bedId);
+      console.log("UserProvider: Single bed data fetched:", bedData);
+      setBed(bedData);
+    } catch (error) {
+      console.error('Failed to refresh beds:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshPlants = async (gardenId, bedId) => {
+    if (!user || !user.id || !gardenId || !bedId) {
+      console.log("UserProvider: Cannot refresh single bed, missing user, garden, or bed ID.");
+      return;
+    }
+    try {
+      setLoading(true);
+      console.log(`UserProvider: Attempting to fetch bed with ID ${bedId} from garden ${gardenId}`);
+      const plantData = await getPlantsApi(user.id, gardenId, bedId);
+      console.log("UserProvider: Single bed data fetched:", plantData);
+      setPlants(plantData);
+    } catch (error) {
+      console.error('Failed to refresh beds:', error);
+    } finally {
+      setLoading(false);
+    }
+
   }
-};
+  const getBedPlants= async(gardenId,bedId) =>{
+    console.log("The plants are being retrieved");
+    if (!user || !user.id || !gardenId || !bedId) {
+      console.log("UserProvider: Cannot refresh single bed, missing user, garden, or bed ID.");
+      return;
+    }
+    const plantData = await getPlantsApi(user.id, gardenId, bedId);
+    return plantData || [];
+  }
 
   useEffect(() => {
     const checkSession = async () => {
@@ -82,12 +143,7 @@ export function UserProvider({ children }) {
       const tokenExpiration = localStorage.getItem('tokenExpiration');
 
       if (token && tokenExpiration && Date.now() < parseInt(tokenExpiration)) {
-        // Assume you have a way to get the user ID from a decoded token or localStorage
-        // For now, we'll fetch from the API to get the latest gardens.
-        // This is a more robust way to handle session restoration.
         try {
-          // This line assumes you store the user's ID in local storage on initial login.
-          // You will need to implement this part in your LoginPage.
           const storedUserId = localStorage.getItem('userId');
           if (storedUserId) {
             const fullUserData = await fetchUserApi(storedUserId);
@@ -103,9 +159,10 @@ export function UserProvider({ children }) {
       setLoading(false);
     };
     checkSession();
-  }, []); // Empty dependency array means this runs only once on mount
+  }, []);
 
-  const value = { user, userId: user?.id, gardens, loading, login, logout, refreshGardens, refreshBeds, beds };
+  // values needed elsewhere
+  const value = { user, userId: user?.id, gardens, getGarden, loading, login, logout, refreshGardens, refreshBeds, beds, refreshBed, bed, refreshPlants, plants, setPlants, setBed, bedId: bed?.id, getBedPlants };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

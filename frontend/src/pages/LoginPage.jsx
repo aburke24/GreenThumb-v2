@@ -33,7 +33,6 @@ const LoginPage = () => {
       if (token && userData) {
         // Pass the full user object to the context login function
         await login(userData, token);
-        alert('Login successful!');
         navigate('/home');
       } else {
         setError('Invalid response from server');
@@ -48,58 +47,58 @@ const LoginPage = () => {
   if (userLoading || loading) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-garden-green flex items-center justify-center font-inter">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-soil-brown text-center mb-6">Welcome Back</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-soil-brown">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-garden-green"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-soil-brown">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-garden-green"
-            />
-          </div>
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => navigate('/signup')}
-              className="bg-gray-200 text-soil-brown py-2 px-4 rounded-md hover:bg-gray-300 transition"
-            >
-              Sign Up
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-accent-blue text-white py-2 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Logging in...' : 'Log In'}
-            </button>
-          </div>
-        </form>
+    <div className="min-h-screen bg-neutral-800 flex items-center justify-center font-inter antialiased">
+        <div className="max-w-md w-full bg-neutral-900 p-8 rounded-xl shadow-xl border border-neutral-700">
+          <h1 className="text-3xl font-bold text-white text-center mb-6">Welcome Back</h1>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-neutral-700 text-white rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-500 transition"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-neutral-700 text-white rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-500 transition"
+              />
+            </div>
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            <div className="flex justify-between items-center space-x-4 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate('signup')}
+                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-lg font-medium hover:bg-neutral-600 transition"
+              >
+                Sign Up
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-emerald-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-emerald-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Logging in...' : 'Log In'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
   );
 };
 

@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "redoc-cli": "^0.13.21",
-    "swagger-jsdoc": "^6.2.8"
+    "swagger-jsdoc": "^6.2.8",
+    "uuid": "^11.1.0"
   }
 }

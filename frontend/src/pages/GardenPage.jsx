@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, Ruler, Box, Save } from 'lucide-react';
+import { ChevronLeft, Plus, Ruler, X, Save } from 'lucide-react';
 import { useUser } from '../hooks/UserUser';
 import AddBedModal from '../modal/AddBedModal';
 import { updateGardenApi } from '../utils/gardenUtil';
@@ -11,7 +11,7 @@ import BedsPanel from '../component/BedsPanel';
 const GardenPage = () => {
     const { gardenId } = useParams();
     const navigate = useNavigate();
-    const { gardens,refreshGardens, refreshBeds, userId, beds, loading } = useUser();
+    const { gardens, refreshGardens, refreshBeds, refreshBed, userId, beds, loading, refreshPlants, getBedPlants } = useUser();
 
     const [garden, setGarden] = useState(null);
     const [gardenName, setGardenName] = useState('');
@@ -56,9 +56,21 @@ const GardenPage = () => {
     const gardenBeds = beds?.[gardenId] ?? [];
 
     const handleBack = () => {
+        const hasHeaderChanges = hasUnsavedChanges;
+
+        const hasUnsavedBedPositions = Object.keys(unsavedPositions).length > 0;
+
+        if (hasHeaderChanges || hasUnsavedBedPositions) {
+            const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+            if (!confirmed) {
+                // If the user clicks 'Cancel', do not navigate back.
+                return;
+            }
+        }
+        // If there are no unsaved changes or the user confirms, navigate back.
         refreshGardens();
         navigate(-1);
-    }
+    };
     const openAddBedModal = () => setIsAddBedOpen(true);
     const closeAddBedModal = () => setIsAddBedOpen(false);
     const toggleBeds = () => setIsBedsOpen(prev => !prev);
@@ -96,50 +108,58 @@ const GardenPage = () => {
     };
 
     const handleSave = async () => {
-    if (!garden || !userId || !gardenId) return;
+        if (!garden || !userId || !gardenId) return;
 
-    const newData = {
-        garden_name: gardenName,
-        width: parseFloat(gardenWidth),
-        height: parseFloat(gardenHeight),
+        const newData = {
+            garden_name: gardenName,
+            width: parseFloat(gardenWidth),
+            height: parseFloat(gardenHeight),
+        };
+
+        try {
+            // 1. Update the garden info
+            console.log("Updating the new garden ", userId, gardenId, newData);
+            await updateGardenApi(userId, gardenId, newData);
+
+            // 2. Update only beds with unsaved changes
+            const updatePromises = Object.entries(unsavedPositions).map(([bedId, bedData]) => {
+                const originalBed = gardenBeds.find(b => b.bed_id === bedId);
+                if (!originalBed) return null;
+
+                const updatedBed = {
+                    ...originalBed,
+                    top_position: bedData.top,
+                    left_position: bedData.left,
+                    width: bedData.width,
+                    height: bedData.height,
+                };
+
+                return updateBedApi(userId, gardenId, bedId, updatedBed);
+            }).filter(Boolean);
+
+            await Promise.all(updatePromises);
+
+            // 3. Refresh garden and bed state
+            setGarden({ ...garden, ...newData });
+            await refreshBeds(gardenId);
+            setUnsavedPositions({});
+            setSelectedBedId(null);
+            setHasUnsavedChanges(false);
+            setDisplayWidth(newData.width * 10);
+            setDisplayHeight(newData.height * 10);
+        } catch (error) {
+            console.error('Error saving garden and beds:', error);
+        }
     };
 
-    try {
-        // 1. Update the garden info
-        console.log("Updating the new garden ", userId, gardenId, newData);
-        await updateGardenApi(userId, gardenId, newData);
-
-        // 2. Update only beds with unsaved changes
-        const updatePromises = Object.entries(unsavedPositions).map(([bedId, bedData]) => {
-            const originalBed = gardenBeds.find(b => b.bed_id === bedId);
-            if (!originalBed) return null;
-
-            const updatedBed = {
-                ...originalBed,
-                top_position: bedData.top,
-                left_position: bedData.left,
-                width: bedData.width,
-                height: bedData.height,
-            };
-
-            return updateBedApi(userId, gardenId, bedId, updatedBed);
-        }).filter(Boolean);
-
-        await Promise.all(updatePromises);
-
-        // 3. Refresh garden and bed state
-        setGarden({ ...garden, ...newData });
-        await refreshBeds(gardenId);
-        setUnsavedPositions({});
-        setSelectedBedId(null);
+    const handleCancelChanges = () => {
+        if (garden) {
+            setGardenName(garden.garden_name);
+            setGardenWidth(garden.width.toString());
+            setGardenHeight(garden.height.toString());
+        }
         setHasUnsavedChanges(false);
-        setDisplayWidth(newData.width * 10);
-        setDisplayHeight(newData.height * 10);
-    } catch (error) {
-        console.error('Error saving garden and beds:', error);
-    }
-};
-
+    };
     const handleDeleteBed = async (bedId) => {
         if (!userId || !gardenId || !bedId) {
             console.error('Missing required parameters for bed deletion.');
@@ -156,8 +176,11 @@ const GardenPage = () => {
     };
 
     const handleEditBed = (bed) => {
-        console.log("Editing bed:", bed);
-        navigate(`/bed/${bed.bed_id}`);
+        console.log("Editing bed:", bed.bed_id);
+        refreshBed(gardenId, bed.bed_id);
+        refreshPlants(gardenId, bed.bed_id);
+        navigate(`/garden/${gardenId}/bed/${bed.bed_id}`);
+
     };
 
     const handleMouseDown = () => {
@@ -214,44 +237,44 @@ const GardenPage = () => {
     };
 
     const onGardenClick = ({ row, col }) => {
-    // If no bed is selected, do nothing
-    if (!selectedBedId) return;
+        // If no bed is selected, do nothing
+        if (!selectedBedId) return;
 
-    const bed = gardenBeds.find((b) => b.bed_id === selectedBedId);
-    if (!bed) return;
+        const bed = gardenBeds.find((b) => b.bed_id === selectedBedId);
+        if (!bed) return;
 
-    // Check if the bed is unplaced (positions are -1)
-    const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
+        // Check if the bed is unplaced (positions are -1)
+        const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
 
-    // Use the bed's original width/height if no unsaved changes exist
-    const bedWidth = unsavedPositions[selectedBedId]?.width || bed.width;
-    const bedHeight = unsavedPositions[selectedBedId]?.height || bed.height;
+        // Use the bed's original width/height if no unsaved changes exist
+        const bedWidth = unsavedPositions[selectedBedId]?.width || bed.width;
+        const bedHeight = unsavedPositions[selectedBedId]?.height || bed.height;
 
-    // Check if the bed fits within the garden bounds
-    if (
-      row >= 0 &&
-      col >= 0 &&
-      row + bedHeight <= parseInt(gardenHeight) &&
-      col + bedWidth <= parseInt(gardenWidth)
-    ) {
-      // If the bed is unplaced OR it's a placed bed being moved, update the unsaved positions
-      if (isUnplaced || bed.top_position !== row || bed.left_position !== col) {
-        setUnsavedPositions((prev) => ({
-          ...prev,
-          [selectedBedId]: {
-            ...prev[selectedBedId],
-            top: row,
-            left: col,
-            // Ensure width and height are included when initially placing
-            width: bedWidth,
-            height: bedHeight,
-          },
-        }));
-      }
-    } else {
-      console.log('Bed does not fit at the clicked position.');
-    }
-  };
+        // Check if the bed fits within the garden bounds
+        if (
+            row >= 0 &&
+            col >= 0 &&
+            row + bedHeight <= parseInt(gardenHeight) &&
+            col + bedWidth <= parseInt(gardenWidth)
+        ) {
+            // If the bed is unplaced OR it's a placed bed being moved, update the unsaved positions
+            if (isUnplaced || bed.top_position !== row || bed.left_position !== col) {
+                setUnsavedPositions((prev) => ({
+                    ...prev,
+                    [selectedBedId]: {
+                        ...prev[selectedBedId],
+                        top: row,
+                        left: col,
+                        // Ensure width and height are included when initially placing
+                        width: bedWidth,
+                        height: bedHeight,
+                    },
+                }));
+            }
+        } else {
+            console.log('Bed does not fit at the clicked position.');
+        }
+    };
 
     const onConfirmPlacement = async (bedId, newBedData) => {
         try {
@@ -274,27 +297,27 @@ const GardenPage = () => {
         }
     };
     const onUnplaceBed = async (bed) => {
-    if (!userId || !gardenId || !bed.bed_id) {
-        console.error('Missing required parameters for unplacing bed.');
-        return;
-    }
-    
-    // Create the updated bed object with new positions
-    const updatedBedData = {
-        ...bed,
-        top_position: -1,
-        left_position: -1,
-    };
+        if (!userId || !gardenId || !bed.bed_id) {
+            console.error('Missing required parameters for unplacing bed.');
+            return;
+        }
 
-    try {
-        await updateBedApi(userId, gardenId, bed.bed_id, updatedBedData);
-        await refreshBeds(gardenId);
-        // Deselect the bed after unplacing it
-        setSelectedBedId(null); 
-    } catch (error) {
-        console.error(`Error unplacing bed ${bed.bed_id}:`, error);
-    }
-};
+        // Create the updated bed object with new positions
+        const updatedBedData = {
+            ...bed,
+            top_position: -1,
+            left_position: -1,
+        };
+
+        try {
+            await updateBedApi(userId, gardenId, bed.bed_id, updatedBedData);
+            await refreshBeds(gardenId);
+            // Deselect the bed after unplacing it
+            setSelectedBedId(null);
+        } catch (error) {
+            console.error(`Error unplacing bed ${bed.bed_id}:`, error);
+        }
+    };
 
     // New function to handle the cancel action
     const onCancelPlacement = (bedId) => {
@@ -346,6 +369,8 @@ const GardenPage = () => {
                             value={gardenWidth}
                             onChange={handleWidthChange}
                             className="w-24 px-3 py-2 bg-neutral-700 text-white rounded-lg"
+                            min="1"
+                            max="50"
                         />
                     </label>
                     <label className="flex items-center space-x-2 w-full sm:w-auto">
@@ -355,6 +380,8 @@ const GardenPage = () => {
                             value={gardenHeight}
                             onChange={handleHeightChange}
                             className="w-24 px-3 py-2 bg-neutral-700 text-white rounded-lg"
+                            min="1"
+                            max="50"
                         />
                     </label>
                     <button
@@ -368,11 +395,23 @@ const GardenPage = () => {
                         <Save className="w-5 h-5" />
                         <span>Save</span>
                     </button>
+                    <button
+                        onClick={handleCancelChanges}
+                        disabled={!hasUnsavedChanges}
+                        className={`flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 rounded-lg transition w-full sm:w-auto ${hasUnsavedChanges
+                            ? 'bg-red-600 hover:bg-red-500'
+                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
+                            }`}
+                    >
+                        <X className="w-5 h-5" />
+                        <span>Cancel</span>
+                    </button>
                 </div>
             </div>
 
             {/* Main Garden Area */}
             <GardenView
+                gardenId={gardenId}
                 gardenWidth={parseInt(gardenWidth)}
                 gardenHeight={parseInt(gardenHeight)}
                 displayWidth={displayWidth}
@@ -383,11 +422,12 @@ const GardenPage = () => {
                 unsavedPositions={unsavedPositions}
                 setUnsavedPositions={setUnsavedPositions}
                 onConfirmPlacement={onConfirmPlacement}
-                onCancelPlacement={onCancelPlacement} // Pass the new cancel handler
-                onGardenClick={onGardenClick} 
+                onCancelPlacement={onCancelPlacement}
+                onGardenClick={onGardenClick}
                 setSelectedBedId={setSelectedBedId}
-                onEditBed={handleEditBed} 
-                onUnplaceBed={onUnplaceBed} 
+                onEditBed={handleEditBed}
+                onUnplaceBed={onUnplaceBed}
+                getBedPlants={getBedPlants} // Add this line - pass the function from useUser hook
             />
 
             {/* Bottom Panel with Unplaced Beds */}
@@ -406,13 +446,13 @@ const GardenPage = () => {
                 handleEditBed={handleEditBed}
             />
             {/* Add Bed Button */}
-          <button
-  onClick={openAddBedModal}
-  className="fixed bottom-6 right-6 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition z-50 sm:p-3"
-  aria-label="Add Bed"
->
-  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-</button>
+            <button
+                onClick={openAddBedModal}
+                className="fixed bottom-6 right-6 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition z-50 sm:p-3"
+                aria-label="Add Bed"
+            >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
             {/* Add Bed Modal */}
             <AddBedModal
