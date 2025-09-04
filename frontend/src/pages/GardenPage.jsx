@@ -265,7 +265,7 @@ const GardenPage = () => {
         ) {
             // If the bed is unplaced OR it's a placed bed being moved, update the unsaved positions
             if (isUnplaced || bed.top_position !== row || bed.left_position !== col) {
-                console.log("Placing the bed", row, col);
+
                 setUnsavedPositions((prev) => ({
                     ...prev,
                     [selectedBedId]: {

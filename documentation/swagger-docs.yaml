@@ -1,0 +1,354 @@
+openapi: 3.0.0
+info:
+  title: GreenThumb Backend API
+  description: A comprehensive API for managing gardens, beds, and plants.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001/api
+    description: Local Development Server
+  - url: https://api.yourdomain.com/api
+    description: Production Server
+tags:
+  - name: Gardens
+    description: Endpoints for managing garden resources.
+  - name: Beds
+    description: Endpoints for managing garden beds.
+  - name: Plants
+    description: Endpoints for managing plants and the plant catalog.
+paths:
+  /gardens:
+    post:
+      summary: Create a new garden
+      tags:
+        - Gardens
+      description: Creates a new garden for a specific user and sets it as active, deactivating any previous gardens for that user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - garden_name
+                - width
+                - height
+              properties:
+                userId:
+                  type: integer
+                  description: The ID of the user creating the garden.
+                garden_name:
+                  type: string
+                  description: The name of the new garden.
+                width:
+                  type: integer
+                  description: The width of the garden.
+                height:
+                  type: integer
+                  description: The height of the garden.
+      responses:
+        '201':
+          description: Garden created successfully.
+        '400':
+          description: User ID is required.
+        '500':
+          description: Internal server error.
+  /gardens/{gardenId}:
+    get:
+      summary: Get a garden by ID
+      tags:
+        - Gardens
+      description: Retrieves a single garden's information by its unique ID.
+      parameters:
+        - name: gardenId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Garden found.
+        '404':
+          description: Garden not found.
+    put:
+      summary: Update a garden by ID
+      tags:
+        - Gardens
+      description: Updates an existing garden's properties.
+      parameters:
+        - name: gardenId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                garden_name:
+                  type: string
+                width:
+                  type: integer
+                height:
+                  type: integer
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Garden updated successfully.
+        '404':
+          description: Garden not found.
+    delete:
+      summary: Delete a garden by ID
+      tags:
+        - Gardens
+      description: Deletes a garden and sets the most recent previous garden to active.
+      parameters:
+        - name: gardenId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Garden deleted successfully.
+        '404':
+          description: Garden not found.
+
+  /beds:
+    post:
+      summary: Create a new bed
+      tags:
+        - Beds
+      description: Creates a new bed within a specified garden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - garden_id
+                - name
+              properties:
+                garden_id:
+                  type: integer
+                name:
+                  type: string
+                top_position:
+                  type: number
+                left_position:
+                  type: number
+                width:
+                  type: number
+                height:
+                  type: number
+      responses:
+        '201':
+          description: Bed created successfully.
+        '400':
+          description: Garden ID is required.
+        '500':
+          description: Internal server error.
+    get:
+      summary: Get beds from a garden
+      tags:
+        - Beds
+      description: Retrieves all beds for a specific garden, or a single bed if a bedId is provided.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: gardenId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: bedId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of beds (with plants) or a single bed.
+        '400':
+          description: Missing userId or gardenId.
+        '404':
+          description: No beds found for the garden.
+    put:
+      summary: Update a bed
+      tags:
+        - Beds
+      description: Updates an existing bed's properties based on user, garden, and bed ID.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: gardenId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: bedId
+          in: query
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                top_position:
+                  type: number
+                left_position:
+                  type: number
+                width:
+                  type: number
+                height:
+                  type: number
+      responses:
+        '200':
+          description: Bed updated successfully.
+        '400':
+          description: Missing required IDs.
+        '404':
+          description: Bed not found.
+    delete:
+      summary: Delete a bed
+      tags:
+        - Beds
+      description: Deletes a bed based on user, garden, and bed ID.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: gardenId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: bedId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Bed deleted successfully.
+        '400':
+          description: Missing required IDs.
+        '404':
+          description: Bed not found.
+
+  /plants/save-plants:
+    post:
+      summary: Save all plants to a bed
+      tags:
+        - Plants
+      description: Replaces all existing plants in a bed with a new array of plants.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: gardenId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: bedId
+          in: query
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  plant_id:
+                    type: integer
+                  x_position:
+                    type: integer
+                  y_position:
+                    type: integer
+                  plant_role:
+                    type: string
+      responses:
+        '200':
+          description: Plants saved successfully.
+        '400':
+          description: Missing required parameters or an invalid request body.
+  /plants/all-plants:
+    get:
+      summary: Get all plants in a bed
+      tags:
+        - Plants
+      description: Retrieves all plants for a specific garden bed.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: gardenId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: bedId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of plants in the bed.
+        '400':
+          description: Missing required parameters.
+  /plants/catalog:
+    get:
+      summary: Get all plants from catalog
+      tags:
+        - Plants
+      description: Retrieves all available plants from the catalog.
+      responses:
+        '200':
+          description: A list of all plants in the catalog.
+  /plants/catalog/{plantId}:
+    get:
+      summary: Get a single plant from catalog
+      tags:
+        - Plants
+      description: Retrieves a single plant from the catalog by its ID.
+      parameters:
+        - name: plantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single plant object.
+        '404':
+          description: Plant not found in the catalog.
