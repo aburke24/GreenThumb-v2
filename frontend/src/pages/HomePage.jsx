@@ -59,6 +59,7 @@ const HomePage = () => {
     };
 
     const handleGardenClick = (gardenId) => {
+        console.log("The gardenId is ", gardenId);
         navigate(`/garden/${gardenId}`);
     };
 

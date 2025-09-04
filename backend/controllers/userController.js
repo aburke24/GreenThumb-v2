@@ -46,44 +46,43 @@ async function getUserData(req, res) {
     try {
         const { userId } = req.query;
 
-        // Step 1: Get the user's basic profile from the userModel.
+        // Step 1: Get basic user info
         const user = await userModel.findUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'ERROR: User not found' });
         }
 
-        // Step 2: Get all the gardens for that user from the gardenModel.
+        // Step 2: Get all gardens for the user
         const gardens = await gardenModel.findGardensByUserId(userId);
-        user.gardens = gardens;
 
-        // Step 3: Fetch beds for all gardens and attach them.
-        // We use Promise.all to fetch beds for all gardens concurrently.
-        const beds = await bedModel.findBedsByUserId(userId);
+        // Step 3: For each garden, get its beds and plants
+        const enrichedGardens = await Promise.all(
+            gardens.map(async (garden) => {
+                // Get beds for the garden
+                const beds = await bedModel.findBedsByGardenId(garden.id);
 
-        // Step 4: Fetch plants for all beds and attach them.
-        // Create an array of promises to fetch plants for each bed.
-        const plantPromises = beds.map(bed => plantModel.getPlantsForBed(userId, bed.garden_id, bed.id)
-            .then(plants => {
-                bed.plants = plants; // Attach plants to the bed object
-                return bed;
+                // For each bed, get plants
+                const bedsWithPlants = await Promise.all(
+                    beds.map(async (bed) => {
+                        const plants = await plantModel.getPlantsForBed(userId, garden.id, bed.id);
+                        return { ...bed, plants };
+                    })
+                );
+
+                return { ...garden, beds: bedsWithPlants };
             })
         );
 
-        // Wait for all plant promises to resolve
-        const bedsWithPlants = await Promise.all(plantPromises);
-
-        // Step 5: Associate beds with their respective gardens.
-        user.gardens.forEach(garden => {
-            garden.beds = bedsWithPlants.filter(bed => bed.garden_id === garden.id);
-        });
-
-        // Step 6: Return the full, assembled user object
+        // Step 4: Assemble and return
+        user.gardens = enrichedGardens;
         res.status(200).json(user);
+
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ message: 'ERROR: Internal server error' });
     }
 }
+
 
 async function updateUser(req,res){
     const { userId } = req.query;

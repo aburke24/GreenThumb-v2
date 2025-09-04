@@ -2,6 +2,7 @@ import React from 'react';
 import UnplacedBedCard from '../component/UnplacedBedCard';
 
 const BedsPanel = ({
+  gardenId,
   gardenBeds,
   showUnplacedBeds,
   setShowUnplacedBeds,

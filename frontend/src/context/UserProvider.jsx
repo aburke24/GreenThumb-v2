@@ -12,7 +12,7 @@ export function UserProvider({ children }) {
   const [beds, setBeds] = useState({}); 
   const [plants, setPlants] = useState({});
 
-  const login = async (user, token) => { // Renamed userData to user to avoid confusion
+  const login = async (user, token) => { 
     try {
       setLoading(true);
       const expirationTime = Date.now() + 3600 * 1000;
@@ -21,6 +21,7 @@ export function UserProvider({ children }) {
       localStorage.setItem('userId', user.id);
 
       const fullUserData = await fetchUserApi(user.id);
+      console.log("The user data is ", fullUserData);
       setUserData(fullUserData);
     } catch (error) {
       console.error('Login failed:', error);
@@ -134,12 +135,14 @@ const getUserId = () =>{
 
   // Utility functions that now rely on the local state
   const getGarden = (gardenId) => {
+    console.log(" 1The garden id is ", gardenId);
     if (!userData) return null;
     // Ensure strict equality with `===` and handle potential string/number mismatches
     return userData.gardens.find(garden => garden.id == gardenId);
   };
 
   const getBedsForGarden = (gardenId) => {
+    console.log("2The garden id is ", gardenId);
     const garden = getGarden(gardenId);
     if (!garden) {
       console.log(`No garden found with ID: ${gardenId}. Returning empty array.`);

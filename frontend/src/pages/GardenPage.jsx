@@ -33,9 +33,10 @@ const GardenPage = () => {
 
     const gardenBeds = getBedsForGarden(gardenId);
     const userId =userData.id;
+    
 
     useEffect(() => {
-        getGarden(gardenId);
+       console.log("the gardenId is", gardenId);
         if (gardenId) {
             const foundGarden = getGarden(gardenId);
             setGarden(foundGarden);
@@ -438,6 +439,7 @@ const GardenPage = () => {
 
             {/* Bottom Panel with Unplaced Beds */}
             <BedsPanel
+                gardenId={gardenId}
                 gardenBeds={gardenBeds}
                 showUnplacedBeds={showUnplacedBeds}
                 setShowUnplacedBeds={setShowUnplacedBeds}
