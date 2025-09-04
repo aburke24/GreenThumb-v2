@@ -15,6 +15,14 @@ const BedsPanel = ({
   handleDeleteBed,
   handleEditBed,
 }) => {
+  console.log("The Garden beds are ", gardenBeds);
+  // Determine which beds to display based on the showUnplacedBeds state
+  const bedsToDisplay = gardenBeds.filter((bed) =>
+    showUnplacedBeds
+      ? bed.left_position === -1 && bed.top_position === -1
+      : bed.left_position >= 0 && bed.top_position >= 0
+  );
+
   return (
     <div
       className="bg-neutral-900 border-t border-neutral-700 shadow-inner relative"
@@ -80,27 +88,17 @@ const BedsPanel = ({
         style={{ height: `calc(${bedPanelHeight}px - 60px)` }}
       >
         <div className="flex flex-wrap gap-4">
-          {gardenBeds.filter((bed) =>
-            showUnplacedBeds
-              ? bed.left_position === -1 && bed.top_position === -1
-              : bed.left_position >= 0 && bed.top_position >= 0
-          ).length > 0 ? (
-            gardenBeds
-              .filter((bed) =>
-                showUnplacedBeds
-                  ? bed.left_position === -1 && bed.top_position === -1
-                  : bed.left_position >= 0 && bed.top_position >= 0
-              )
-              .map((bed) => (
-                <UnplacedBedCard
-                  key={bed.bed_id}
-                  bed={bed}
-                  selected={selectedBedId === bed.bed_id}
-                  handleBedClick={handleCardClick}
-                  handleDeleteBed={handleDeleteBed}
-                  handleEditBed={handleEditBed}
-                />
-              ))
+          {bedsToDisplay.length > 0 ? (
+            bedsToDisplay.map((bed) => (
+              <UnplacedBedCard
+                key={bed.id}
+                bed={bed}
+                selected={selectedBedId === bed.id}
+                handleBedClick={handleCardClick}
+                handleDeleteBed={handleDeleteBed}
+                handleEditBed={handleEditBed}
+              />
+            ))
           ) : (
             <p className="text-gray-400">
               {showUnplacedBeds ? 'No unplaced beds found.' : 'No placed beds found.'}

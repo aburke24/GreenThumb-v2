@@ -114,6 +114,35 @@ async function findBedByUserIdGardenIdAndBedId(userId, gardenId, bedId) {
 }
 
 /**
+ * Finds all beds belonging to a specific user.
+ * This method joins the `garden_beds` and `gardens` tables to ensure the beds belong to the given user.
+ * @param {string} userId - The ID of the user.
+ * @returns {Promise<Array<Object>>} An array of bed objects.
+ */
+async function findBedsByUserId(userId) {
+    try {
+        const query = `
+            SELECT
+                gb.id,
+                gb.garden_id,
+                gb.name,
+                gb.top_position,
+                gb.left_position,
+                gb.width,
+                gb.height
+            FROM garden_beds gb
+            JOIN gardens g ON gb.garden_id = g.id
+            WHERE g.user_id = $1;
+        `;
+        const { rows } = await pool.query(query, [userId]);
+        return rows;
+    } catch (error) {
+        console.error('Database error in bedModel.findBedsByUserId:', error);
+        throw error;
+    }
+}
+
+/**
  * Updates a bed's information in the database.
  * @param {string} userId - The ID of the user.
  * @param {string} gardenId - The ID of the garden.
@@ -201,6 +230,7 @@ module.exports = {
     findBedsByGardenId,
     findGardenBedsAndPlantsByGardenId,
     findBedByUserIdGardenIdAndBedId,
+    findBedsByUserId,
     update,
     remove,
     removeByGardenId

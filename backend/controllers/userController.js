@@ -1,27 +1,18 @@
 /**
  * @file controllers/userController.js
  * @description Handles the business logic for user-related requests.
- *
- * This controller acts as the intermediary between the router and the model.
- * It extracts data from the request, calls the appropriate function in the
- * userModel to interact with the database, and sends a response back to the client.
  */
 // Imports
 const userModel = require('../models/userModel');
 const gardenModel = require('../models/gardenModel');
 const bedModel = require('../models/bedModel');
+const plantModel = require('../models/plantModel'); // Import plantModel
 const bcrypt = require('bcrypt');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
 /**
  * Handles the creation of a new user.
- *
- * This function calls the user model to save the new user's data to the database
- * and sends a success response with the new user's information.
- *
- * @param {object} req - The Express request object, containing the new user's data in the body.
- * @param {object} res - The Express response object used to send back the result.
  */
 async function createUser(req,res) {
     try{
@@ -37,7 +28,7 @@ async function getUserId(req,res) {
     try{
         const userId = await userModel.getUserByEmail(req.query.email);
        if(!userId){
-            return res.status(404).json({ message: 'ERROR: User not found' }); 
+            return res.status(404).json({ message: 'ERROR: User not found' });
        }
         res.status(201).json(userId);
     }catch(error){
@@ -65,8 +56,28 @@ async function getUserData(req, res) {
         const gardens = await gardenModel.findGardensByUserId(userId);
         user.gardens = gardens;
 
-        // Return the full, assembled user object
-        // The beds and plants will be fetched separately by other endpoints
+        // Step 3: Fetch beds for all gardens and attach them.
+        // We use Promise.all to fetch beds for all gardens concurrently.
+        const beds = await bedModel.findBedsByUserId(userId);
+
+        // Step 4: Fetch plants for all beds and attach them.
+        // Create an array of promises to fetch plants for each bed.
+        const plantPromises = beds.map(bed => plantModel.getPlantsForBed(userId, bed.garden_id, bed.id)
+            .then(plants => {
+                bed.plants = plants; // Attach plants to the bed object
+                return bed;
+            })
+        );
+
+        // Wait for all plant promises to resolve
+        const bedsWithPlants = await Promise.all(plantPromises);
+
+        // Step 5: Associate beds with their respective gardens.
+        user.gardens.forEach(garden => {
+            garden.beds = bedsWithPlants.filter(bed => bed.garden_id === garden.id);
+        });
+
+        // Step 6: Return the full, assembled user object
         res.status(200).json(user);
     } catch (error) {
         console.error('Error fetching user data:', error);
@@ -85,7 +96,6 @@ async function updateUser(req,res){
             console.log("User successfully updated");
             res.status(200).json(updatedUser);
         }else {
-            // If no user was found with that ID, send a 404 Not Found error
             res.status(404).json({ message: 'ERROR: User not found' });
         }
     } catch (error) {
@@ -97,8 +107,6 @@ async function updateUser(req,res){
 
 /**
  * @description Deletes a user and all associated data.
- * @param {object} req - The Express request object.
- * @param {object} res - The Express response object.
  */
 async function deleteUser(req, res) {
     try {
@@ -130,7 +138,7 @@ async function deleteUser(req, res) {
         await userModel.remove(req.query.email);
 
         console.log(`User with email: ${req.query.email} and all associated data were successfully deleted.`);
-        res.status(204).send(); // 204 No Content for a successful deletion.
+        res.status(204).send();
     } catch (error) {
         console.error('Error deleting user and related data:', error);
         res.status(500).json({ message: 'ERROR: User deletion failed' });
@@ -142,5 +150,5 @@ module.exports = {
   getUserId,
   getUserData,
   updateUser,
-  deleteUser 
+  deleteUser
 };

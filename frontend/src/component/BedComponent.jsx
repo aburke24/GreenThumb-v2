@@ -3,12 +3,13 @@ import { Check, X } from 'lucide-react';
 
 const BedComponent = ({
     bed,
-    plants = [], // Add plants prop
+    plants = [],
     isUnsaved = false,
     onConfirm,
     onCancel,
     onResize,
 }) => {
+
     const cellSize = 10;
     const { width, height, top_position, left_position } = bed;
 
@@ -75,9 +76,8 @@ const BedComponent = ({
             setCurrentHeight(newHeight);
             setCurrentTop(newTop);
             setCurrentLeft(newLeft);
-
             onResize?.({
-                bed_id: bed.bed_id,
+                id: bed.id,
                 newWidth,
                 newHeight,
                 newTop,
@@ -95,7 +95,6 @@ const BedComponent = ({
         window.addEventListener('mouseup', stopDrag);
     };
 
-    // Helper function to get plant dimensions based on spacing (same as EditBedPage)
     const getPlantDimensions = (spacing) => {
         const s = parseInt(spacing);
         if (s === 1) return { width: 1, height: 1 };
@@ -104,7 +103,6 @@ const BedComponent = ({
         return { width: 1, height: 1 };
     };
 
-    // Process plants to get their rendered positions and dimensions
     const processedPlants = plants.map(plant => {
         const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
         return {
@@ -114,7 +112,6 @@ const BedComponent = ({
         };
     });
 
-    // Render grid cells (with background color if occupied)
     const renderGridCells = () => {
         const cols = isUnsaved ? currentWidth : width;
         const rows = isUnsaved ? currentHeight : height;
@@ -123,7 +120,6 @@ const BedComponent = ({
             const x = i % cols;
             const y = Math.floor(i / cols);
 
-            // Check if any plant covers this cell
             const isOccupied = processedPlants.some(plant => {
                 return (
                     x >= plant.x_position &&
@@ -133,7 +129,6 @@ const BedComponent = ({
                 );
             });
 
-            // Cell background color classes based on occupancy
             let cellBgClass = isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]';
 
             return (
@@ -168,11 +163,10 @@ const BedComponent = ({
         >
             {renderGridCells()}
 
-            {/* Render Plants */}
             {processedPlants.map((plant) => (
                 <div
                     key={plant.id || plant.plant_id}
-                    className="absolute z-20 items-center justify-center" // Added flex for centering
+                    className="absolute z-20 items-center justify-center"
                     style={{
                         top: `${plant.y_position * cellSize}px`,
                         left: `${plant.x_position * cellSize}px`,
@@ -189,13 +183,12 @@ const BedComponent = ({
                             alt={plant.plant_name || plant.name}
                             style={{
                                 pointerEvents: 'none',
-                                width: '85%', // Slightly smaller to give padding
-                                height: '85%', // Slightly smaller to give padding
+                                width: '85%',
+                                height: '85%',
                                 objectFit: 'contain',
                             }}
                         />
                     ) : (
-                        // Fallback if no icon is available
                         <div
                             className="w-full h-full rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold"
                             style={{ fontSize: `${Math.max(6, cellSize * 0.3)}px` }}
@@ -238,16 +231,13 @@ const BedComponent = ({
                 </button>
             )}
 
-            {/* Resize Handles (conditionally rendered only if unsaved) */}
             {isUnsaved && (
                 <>
-                    {/* Corners */}
                     <div className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize top-handle left-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize top-handle right-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize bottom-handle left-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize bottom-handle right-handle z-40" onMouseDown={handleResize} />
 
-                    {/* Sides */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-2 cursor-ns-resize top-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-2 cursor-ns-resize bottom-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 cursor-ew-resize left-handle z-40" onMouseDown={handleResize} />
@@ -257,5 +247,6 @@ const BedComponent = ({
         </div>
     );
 };
+
 
 export default BedComponent;

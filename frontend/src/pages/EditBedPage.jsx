@@ -28,7 +28,8 @@ const getPlantDimensions = (spacing) => {
 
 const EditBedPage = () => {
     const { bedId, gardenId } = useParams();
-    const { userId, bed, refreshBed, loading, refreshPlants, plants, refreshBeds, getGarden } = useUser();
+    // Access the comprehensive userData and helper functions from the hook
+    const { userData, loading, refreshUserData, getGarden, getBedsForGarden, getBedPlants } = useUser();
 
     const navigate = useNavigate();
     const [bedName, setBedName] = useState('');
@@ -42,14 +43,13 @@ const EditBedPage = () => {
     const [isMobile, setIsMobile] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
     const [activePlant, setActivePlant] = useState(null);
     const [bedLayout, setBedLayout] = useState([]);
     const [plantsInBed, setPlantsInBed] = useState([]);
     const [allPlants, setAllPlants] = useState([]);
     const bedContainerRef = useRef(null);
     const [bedContainerDimensions, setBedContainerDimensions] = useState({ width: 0, height: 0 });
-    const [garden, setGarden] = useState('');
+    const [garden, setGarden] = useState(null);
     const [hoveredCell, setHoveredCell] = useState(null);
     const [activePlantButtons, setActivePlantButtons] = useState(Array(5).fill(null));
     const [editingButtonIndex, setEditingButtonIndex] = useState(null);
@@ -74,34 +74,41 @@ const EditBedPage = () => {
         }
     }, [allPlants]);
 
-    // Populate local state with bed and plants data
+    // Populate local state with bed and plants data from the context
     useEffect(() => {
-        if (bed) {
-            setBedName(bed.name);
-            setWidth(bed.width);
-            setHeight(bed.height);
-            setGarden(getGarden(gardenId));
-        }
+        if (userData) {
+            const foundGarden = getGarden(gardenId);
+            setGarden(foundGarden);
+            
+            const bedsInGarden = getBedsForGarden(gardenId);
+            const foundBed = bedsInGarden.find(b => b.bed_id === bedId);
+            
+            if (foundBed) {
+                setBedName(foundBed.name);
+                setWidth(foundBed.width);
+                setHeight(foundBed.height);
 
-        if (bed && plants) {
-            const newLayout = Array.from({ length: bed.height }, () =>
-                Array.from({ length: bed.width }, () => null)
-            );
-
-            plants.forEach(plant => {
-                const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
-                for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
-                    for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
-                        if (newLayout[r] && newLayout[r][c] !== undefined) {
-                            newLayout[r][c] = plant;
+                const plantsInBed = getBedPlants(gardenId, bedId);
+                setPlantsInBed(plantsInBed);
+                
+                const newLayout = Array.from({ length: foundBed.height }, () =>
+                    Array.from({ length: foundBed.width }, () => null)
+                );
+    
+                plantsInBed.forEach(plant => {
+                    const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                    for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
+                        for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
+                            if (newLayout[r] && newLayout[r][c] !== undefined) {
+                                newLayout[r][c] = plant;
+                            }
                         }
                     }
-                }
-            });
-            setBedLayout(newLayout);
-            setPlantsInBed(plants);
+                });
+                setBedLayout(newLayout);
+            }
         }
-    }, [bed, plants]);
+    }, [userData, getGarden, getBedsForGarden, getBedPlants, gardenId, bedId]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -119,7 +126,9 @@ const EditBedPage = () => {
     }, []);
 
     const checkForHeaderChanges = (name, w, h) => {
-        setHasUnsavedHeader(name !== bed.name || w !== bed.width || h !== bed.height);
+        const originalBed = getBedsForGarden(gardenId)?.find(b => b.bed_id === bedId);
+        if (!originalBed) return;
+        setHasUnsavedHeader(name !== originalBed.name || w !== originalBed.width || h !== originalBed.height);
     };
 
     const handleNameChange = (e) => {
@@ -131,7 +140,6 @@ const EditBedPage = () => {
     const handleWidthChange = (e) => {
         const val = e.target.value;
         const newWidth = val === "" ? "" : Number(val);
-
         setWidth(newWidth);
         setPlantsInBed([]);
         if (newWidth !== "") {
@@ -144,13 +152,11 @@ const EditBedPage = () => {
     const handleHeightChange = (e) => {
         const val = e.target.value;
         const newHeight = val === '' ? '' : Number(val);
-
         setHeight(newHeight);
         setPlantsInBed([]);
         if (newHeight !== '') {
             setBedLayout(Array.from({ length: newHeight }, () => Array.from({ length: width }, () => null)));
         }
-
         setHasUnsavedPlants(true);
         checkForHeaderChanges(bedName, width, newHeight);
     };
@@ -162,18 +168,17 @@ const EditBedPage = () => {
                 return;
             }
         }
-        refreshBeds(gardenId);
+        refreshUserData(); // Single refresh call on exit
         navigate(-1);
     };
 
     const handleSaveHeader = async () => {
-        if (width > garden.width || height > garden.height) {
+        if (!garden || width > garden.width || height > garden.height) {
             alert("Bed dimensions cannot be larger than the garden's dimensions. Please adjust the width and height.");
             return;
         }
 
         setIsSaving(true);
-        setHasUnsavedHeader(false);
 
         const headerDataToSave = {
             name: bedName,
@@ -181,8 +186,9 @@ const EditBedPage = () => {
             height: height
         };
         try {
-            await updateBedApi(userId, gardenId, bedId, headerDataToSave);
-            refreshBed(gardenId, bedId);
+            await updateBedApi(userData.user.id, gardenId, bedId, headerDataToSave);
+            setHasUnsavedHeader(false);
+            await refreshUserData(); // Refresh all data from the API after saving
         } catch (error) {
             console.error('Failed to save header:', error);
             setHasUnsavedHeader(true);
@@ -192,22 +198,22 @@ const EditBedPage = () => {
     };
 
     const handleCancelHeaderChanges = () => {
-        setBedName(bed.bed_name);
-        setWidth(bed.bed_width);
-        setHeight(bed.bed_height);
+        const originalBed = getBedsForGarden(gardenId)?.find(b => b.bed_id === bedId);
+        if (originalBed) {
+            setBedName(originalBed.name);
+            setWidth(originalBed.width);
+            setHeight(originalBed.height);
+        }
         setHasUnsavedHeader(false);
-        refreshBed(gardenId, bedId);
     };
 
     const handleSavePlants = async () => {
         setIsSaving(true);
-        setHasUnsavedPlants(false);
 
-        const plantsDataToSave = { plants: plantsInBed };
-        console.log("We are saving plants!!");
         try {
-            await updatePlantsApi(userId, gardenId, bedId, plantsDataToSave.plants);
-            refreshPlants(gardenId, bedId);
+            await updatePlantsApi(userData.user.id, gardenId, bedId, plantsInBed);
+            setHasUnsavedPlants(false);
+            await refreshUserData(); // Refresh all data from the API after saving
         } catch (error) {
             console.error('Failed to save plants:', error);
             setHasUnsavedPlants(true);
@@ -221,17 +227,19 @@ const EditBedPage = () => {
             const updatedButtons = [...activePlantButtons];
             updatedButtons[editingButtonIndex] = plant;
             setActivePlantButtons(updatedButtons);
-            setActivePlant(plant); // Set the newly selected plant as active
+            setActivePlant(plant);
             setShowPlantCatalogModal(false);
             setEditingButtonIndex(null);
         }
     };
 
     const handleCancelPlantChanges = () => {
-        const newLayout = Array.from({ length: bed.height }, () =>
-            Array.from({ length: bed.width }, () => null)
+        const originalPlants = getBedPlants(gardenId, bedId);
+        
+        const newLayout = Array.from({ length: height }, () =>
+            Array.from({ length: width }, () => null)
         );
-        plants.forEach(plant => {
+        originalPlants.forEach(plant => {
             const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
             for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
                 for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
@@ -242,13 +250,12 @@ const EditBedPage = () => {
             }
         });
         setBedLayout(newLayout);
-        setPlantsInBed(plants);
+        setPlantsInBed(originalPlants);
         setHasUnsavedPlants(false);
     };
 
     const handleClearBed = () => {
         const confirmed = window.confirm("Are you sure you want to clear all plants from this bed? This action cannot be undone.");
-
         if (confirmed) {
             setBedLayout(Array.from({ length: height }, () => Array.from({ length: width }, () => null)));
             setPlantsInBed([]);
@@ -297,7 +304,6 @@ const EditBedPage = () => {
 
         if (!activePlant) return;
 
-        console.log("the active plant is ", activePlant);
         const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
         if (row + plantH > height || col + plantW > width) {
             return;
@@ -333,7 +339,7 @@ const EditBedPage = () => {
         setHasUnsavedPlants(true);
     };
 
-    if (loading || !bed) {
+    if (loading || !userData || !garden) {
         return (
             <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
                 <span className="text-lg font-semibold">Loading bed...</span>
@@ -343,6 +349,7 @@ const EditBedPage = () => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-neutral-800 text-white font-sans antialiased overflow-hidden">
+            {/* ... (rest of the component, which is unchanged) ... */}
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-neutral-900 border-b border-neutral-700">
                 <div className="flex items-center justify-between w-full sm:w-auto mb-4 sm:mb-0">

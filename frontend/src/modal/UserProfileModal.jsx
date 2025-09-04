@@ -4,8 +4,11 @@ import { useUser } from '../hooks/UserUser';
 import { updateUserApi, deleteUserByEmailApi } from '../utils/userUtil';
 
 const UserProfileModal = ({ isOpen, onClose }) => {
-    const { user, logout, refreshGardens } = useUser();
+    // Access the comprehensive userData and helper functions from the hook
+    const { userData, logout, refreshUserData } = useUser();
     const navigate = useNavigate();
+    const user = userData?.user;
+
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -50,7 +53,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
             // Send all form data to the update API
             await updateUserApi(user.id, formData);
             setMessage('Profile updated successfully!');
-            await refreshGardens(); // Refresh user context data
+            await refreshUserData(); // NEW: Refresh all user data
             setTimeout(() => {
                 onClose();
             }, 1500); // Close after a short delay to show the message
@@ -81,9 +84,9 @@ const UserProfileModal = ({ isOpen, onClose }) => {
             await deleteUserByEmailApi(user.email);
             setMessage('Account deleted successfully. Logging out...');
             setTimeout(() => {
-                logout(); // Logs the user out and navigates to the login page
+                logout(); // Logs the user out and handles navigation
                 navigate('/login');
-            }, 2000); // Wait a bit before logging out and navigating
+            }, 2000); // Wait a bit before logging out
         } catch (error) {
             console.error('Error deleting account:', error);
             setMessage(error.message || 'Failed to delete account.');
@@ -183,3 +186,4 @@ const UserProfileModal = ({ isOpen, onClose }) => {
 };
 
 export default UserProfileModal;
+
