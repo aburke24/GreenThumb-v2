@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { UserContext } from './UserContext';
 import { fetchUserApi } from '../utils/userUtil';
-import { getBedsApi } from '../utils/bedUtil';
-import { getPlantsApi } from '../utils/plantsUtil';
+
 
 
 export function UserProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [gardens, setGardens] = useState([]);
-  const [beds, setBeds] = useState({}); 
-  const [plants, setPlants] = useState({});
+
 
   const login = async (user, token) => { 
     try {
@@ -88,9 +85,7 @@ export function UserProvider({ children }) {
     login,
     logout,
     refreshUserData,
-    gardens,
-    beds,
-    plants
+  
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
