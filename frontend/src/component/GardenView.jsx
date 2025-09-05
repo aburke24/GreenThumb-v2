@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, Ban } from 'lucide-react';
-import BedComponent from './BedComponent';
+import BedComponent from './BedView';
 import { useUser } from '../hooks/UserUser';
 
 const GardenView = ({

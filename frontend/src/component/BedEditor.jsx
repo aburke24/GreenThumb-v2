@@ -9,8 +9,10 @@ const Bed = ({
     onGridClick,
     activePlant,
     isDeleteMode,
-    onCellHover, 
-    onCellLeave, 
+    onCellHover,
+    onCellLeave,
+    isDragging,
+    setIsDragging
 }) => {
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -83,7 +85,7 @@ const Bed = ({
     const canPlacePlant = (row, col) => {
         if (!activePlant) return false;
         const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
-        
+
         // Check if the plant would go out of bounds
         if (row + plantH > height || col + plantW > width) {
             return false;
@@ -92,14 +94,11 @@ const Bed = ({
         // Check for overlaps with existing plants
         for (let r = row; r < row + plantH; r++) {
             for (let c = col; c < col + plantW; c++) {
-                // Ensure r and c are within bedLayout bounds
                 if (r >= 0 && r < height && c >= 0 && c < width) {
                     if (bedLayout[r][c] !== null) {
                         return false;
                     }
                 } else {
-                    // This case should ideally be caught by the out-of-bounds check above,
-                    // but good for robustness.
                     return false;
                 }
             }
@@ -117,6 +116,14 @@ const Bed = ({
         onCellLeave();
     };
 
+    const previewPlant = activePlant && !isDeleteMode && localHoveredCell;
+    const previewPosition = previewPlant ? {
+        top: localHoveredCell.row * cellSize,
+        left: localHoveredCell.col * cellSize,
+        width: getPlantDimensions(activePlant.spacing).width * cellSize,
+        height: getPlantDimensions(activePlant.spacing).height * cellSize,
+    } : null;
+
     return (
         <div
             ref={containerRef}
@@ -125,6 +132,7 @@ const Bed = ({
                 cursor: isDeleteMode ? 'crosshair' : activePlant ? 'crosshair' : 'default',
             }}
             onMouseLeave={handleMouseLeave}
+            onMouseUp={() => setIsDragging(false)}
         >
             <div
                 style={{
@@ -145,42 +153,51 @@ const Bed = ({
                             const isOccupied = bedLayout[rowIndex][colIndex] !== null;
                             let cellBgClass = isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]';
 
-                            // Preview color logic
-                            if (!isDeleteMode && activePlant && localHoveredCell) {
-                                const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
-                                const isHoveredArea = 
-                                    rowIndex >= localHoveredCell.row && 
-                                    rowIndex < localHoveredCell.row + plantH &&
-                                    colIndex >= localHoveredCell.col &&
-                                    colIndex < localHoveredCell.col + plantW;
-
-                                if (isHoveredArea) {
-                                    if (canPlacePlant(localHoveredCell.row, localHoveredCell.col)) {
-                                        cellBgClass = 'bg-green-500 opacity-50'; // Semi-transparent green for valid placement
-                                    } else {
-                                        cellBgClass = 'bg-red-500 opacity-50'; // Semi-transparent red for invalid placement
-                                    }
-                                }
-                            }
-
                             return (
                                 <div
                                     key={`${rowIndex}-${colIndex}`}
                                     className={`border border-white/10 ${cellBgClass}`}
-                                    onClick={() => {
-                                        if (!isDeleteMode) {
+                                    onMouseDown={() => {
+                                        setIsDragging(true);
+                                        onGridClick(rowIndex, colIndex);
+                                    }}
+                                    onMouseEnter={() => {
+                                        // CRUCIAL: Call handleCellHover here to track the mouse movement
+                                        handleCellHover(rowIndex, colIndex);
+
+                                        if (isDragging) {
                                             onGridClick(rowIndex, colIndex);
                                         }
                                     }}
-                                    onMouseEnter={() => handleCellHover(rowIndex, colIndex)}
                                 />
                             );
                         })
                     )}
                 </div>
-                
-                {/* No separate plant preview div needed anymore, as the cells themselves change color */}
-                
+
+                {/* New: Plant Preview Div
+                  This element is rendered conditionally and follows the mouse cursor.
+                */}
+                {previewPlant && (
+                    <div
+                        className="absolute z-30 pointer-events-none transition-opacity duration-100 ease-in-out flex items-center justify-center p-1"
+                        style={{
+                            ...previewPosition,
+                            opacity: 0.7,
+                            borderColor: canPlacePlant(localHoveredCell.row, localHoveredCell.col) ? 'green' : 'red',
+                            borderWidth: '2px',
+                            borderStyle: 'solid',
+                        }}
+                    >
+                        <img
+                            src={activePlant.icon}
+                            alt={activePlant.common_name}
+                            className="w-full h-full object-contain"
+                        />
+                    </div>
+                )}
+
+                {/* Existing: Render the placed plants */}
                 {bedPlants.map((plant) => {
                     const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
                     return (

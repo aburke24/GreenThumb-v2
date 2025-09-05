@@ -9,7 +9,7 @@ import {
     X,
     Pencil,
 } from 'lucide-react';
-import Bed from '../component/Bed';
+import Bed from '../component/BedEditor';
 import PlantCatalog from '../PlantCatalog.json';
 import { useUser } from '../hooks/UserUser';
 import { updateBedApi } from '../utils/bedUtil';
@@ -54,6 +54,8 @@ const EditBedPage = () => {
     const [hoveredCell, setHoveredCell] = useState(null);
     const [activePlantButtons, setActivePlantButtons] = useState(Array(5).fill(null));
     const [editingButtonIndex, setEditingButtonIndex] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+
 
     // Use ResizeObserver to get the available dimensions for the bed grid
     useEffect(() => {
@@ -476,7 +478,10 @@ const EditBedPage = () => {
                         onCellHover={handleCellHover}
                         onCellLeave={handleCellLeave}
                         hoveredCell={hoveredCell}
+                        isDragging={isDragging} 
+                         setIsDragging={setIsDragging}
                     />
+                
                 </div>
 
                 {/* RIGHT: Action Sidebar */}
@@ -485,6 +490,7 @@ const EditBedPage = () => {
                         {!showPlantList ? (
                             <>
                                 {/* Save Plants */}
+                                <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode(false);
@@ -501,8 +507,11 @@ const EditBedPage = () => {
                                     <Save className="w-6 h-6 text-white" />
                                     <Tooltip text="Save Plant Changes" />
                                 </button>
+                                    <span className="text-xs text-white">Save Plants</span>
+                                </div>
 
                                 {/* Cancel Plants */}
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={handleCancelPlantChanges}
                                     disabled={!hasUnsavedPlants}
@@ -516,7 +525,9 @@ const EditBedPage = () => {
                                     <X className="w-6 h-6 text-white" />
                                     <Tooltip text="Cancel Plant Changes" />
                                 </button>
-
+                                    <span className="text-xs text-white">Cancel Changes</span>
+                                </div>
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         console.log("Add Plants button clicked");
@@ -529,6 +540,9 @@ const EditBedPage = () => {
                                     <PlusCircle className="w-6 h-6 text-white" />
                                     <Tooltip text="Add plant" />
                                 </button>
+                                    <span className="text-xs text-white">Add Plant</span>
+                               </div>
+                                <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode((prev) => !prev);
@@ -544,6 +558,9 @@ const EditBedPage = () => {
                                     <Trash2 className="w-6 h-6 text-white" />
                                     <Tooltip text="Delete plant" />
                                 </button>
+                                    <span className="text-xs text-white">Delete Plant</span>
+                                </div>
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         handleClearBed();
@@ -555,17 +572,22 @@ const EditBedPage = () => {
                                     <RefreshCw className="w-6 h-6 text-white" />
                                     <Tooltip text="Clear bed" />
                                 </button>
+                                    <span className="text-xs text-white">Clear Plants</span>
+                                </div>
                             </>
                         ) : (
                             <>
+                            <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={handlePlantListBack}
                                     className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
                                     aria-label="Back to actions"
                                 >
-                                    <X className="w-6 h-6 text-white" />
+                                    <ChevronLeft className="w-6 h-6 text-white" />
                                     <Tooltip text="Back" />
                                 </button>
+                                    <span className="text-xs text-white">Return to Actions</span>
+                                </div>
                                 {activePlantButtons.map((plant, index) => (
                                     <div key={index} className="relative group w-24 h-24">
                                         <button
