@@ -33,13 +33,13 @@ const GardenPage = () => {
     const [unsavedPositions, setUnsavedPositions] = useState({});
 
     const isDragging = useRef(false);
-
     const userId = userData.id;
     
 
     useEffect(() => {
         if (gardenId) {
             const foundGarden = userData.gardens.find(garden => garden.id ==gardenId);
+
             setGarden(foundGarden);
             if (foundGarden) {
                 setGardenName(foundGarden.garden_name);
@@ -52,6 +52,7 @@ const GardenPage = () => {
             }
         }
     }, [garden, gardenId, setLoading, userData.garden, userData.gardens]);
+
 
     useEffect(() => {
         if (isBedsOpen) {
@@ -266,7 +267,6 @@ const GardenPage = () => {
         ) {
             // If the bed is unplaced OR it's a placed bed being moved, update the unsaved positions
             if (isUnplaced || bed.top_position !== row || bed.left_position !== col) {
-                console.log("Placing the bed", row, col);
                 setUnsavedPositions((prev) => ({
                     ...prev,
                     [selectedBedId]: {
@@ -310,6 +310,7 @@ const onConfirmPlacement = async (bedId, newBedData) => {
         console.error("Failed to save bed position and dimensions", err);
     }
 };
+
     const onUnplaceBed = async (bed) => {
         if (!userId || !gardenId || !bed.id) {
             console.error('Missing required parameters for unplacing bed.');
@@ -326,6 +327,7 @@ const onConfirmPlacement = async (bedId, newBedData) => {
         try {
             await updateBedApi(userId, gardenId, bed.id, updatedBedData);
             await refreshUserData(gardenId);
+
             // Deselect the bed after unplacing it
             setSelectedBedId(null);
         } catch (error) {
@@ -431,7 +433,7 @@ const onConfirmPlacement = async (bedId, newBedData) => {
                 gardenHeight={parseInt(gardenHeight)}
                 displayWidth={displayWidth}
                 displayHeight={displayHeight}
-                beds={gardenBeds}
+                beds={gardenBeds} // ✅ <- key change here
                 selectedBedId={selectedBedId}
                 onSelectBed={(bedId) => setSelectedBedId(bedId)}
                 unsavedPositions={unsavedPositions}
