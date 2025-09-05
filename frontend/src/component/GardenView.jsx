@@ -19,7 +19,6 @@ const GardenView = ({
     onEditBed,
     onUnplaceBed
 }) => {
-    const { userData, refreshUserData } = useUser();
     const containerRef = useRef(null);
     const [cellSize, setCellSize] = useState(10);
     const [hoverCell, setHoverCell] = useState(null);
