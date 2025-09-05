@@ -1,27 +1,18 @@
 /**
  * @file controllers/userController.js
  * @description Handles the business logic for user-related requests.
- *
- * This controller acts as the intermediary between the router and the model.
- * It extracts data from the request, calls the appropriate function in the
- * userModel to interact with the database, and sends a response back to the client.
  */
 // Imports
 const userModel = require('../models/userModel');
 const gardenModel = require('../models/gardenModel');
 const bedModel = require('../models/bedModel');
+const plantModel = require('../models/plantModel'); // Import plantModel
 const bcrypt = require('bcrypt');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
 /**
  * Handles the creation of a new user.
- *
- * This function calls the user model to save the new user's data to the database
- * and sends a success response with the new user's information.
- *
- * @param {object} req - The Express request object, containing the new user's data in the body.
- * @param {object} res - The Express response object used to send back the result.
  */
 async function createUser(req,res) {
     try{
@@ -37,7 +28,7 @@ async function getUserId(req,res) {
     try{
         const userId = await userModel.getUserByEmail(req.query.email);
        if(!userId){
-            return res.status(404).json({ message: 'ERROR: User not found' }); 
+            return res.status(404).json({ message: 'ERROR: User not found' });
        }
         res.status(201).json(userId);
     }catch(error){
@@ -55,24 +46,43 @@ async function getUserData(req, res) {
     try {
         const { userId } = req.query;
 
-        // Step 1: Get the user's basic profile from the userModel.
+        // Step 1: Get basic user info
         const user = await userModel.findUserById(userId);
         if (!user) {
             return res.status(404).json({ message: 'ERROR: User not found' });
         }
 
-        // Step 2: Get all the gardens for that user from the gardenModel.
+        // Step 2: Get all gardens for the user
         const gardens = await gardenModel.findGardensByUserId(userId);
-        user.gardens = gardens;
 
-        // Return the full, assembled user object
-        // The beds and plants will be fetched separately by other endpoints
+        // Step 3: For each garden, get its beds and plants
+        const enrichedGardens = await Promise.all(
+            gardens.map(async (garden) => {
+                // Get beds for the garden
+                const beds = await bedModel.findBedsByGardenId(garden.id);
+
+                // For each bed, get plants
+                const bedsWithPlants = await Promise.all(
+                    beds.map(async (bed) => {
+                        const plants = await plantModel.getPlantsForBed(userId, garden.id, bed.id);
+                        return { ...bed, plants };
+                    })
+                );
+
+                return { ...garden, beds: bedsWithPlants };
+            })
+        );
+
+        // Step 4: Assemble and return
+        user.gardens = enrichedGardens;
         res.status(200).json(user);
+
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ message: 'ERROR: Internal server error' });
     }
 }
+
 
 async function updateUser(req,res){
     const { userId } = req.query;
@@ -85,7 +95,6 @@ async function updateUser(req,res){
             console.log("User successfully updated");
             res.status(200).json(updatedUser);
         }else {
-            // If no user was found with that ID, send a 404 Not Found error
             res.status(404).json({ message: 'ERROR: User not found' });
         }
     } catch (error) {
@@ -97,8 +106,6 @@ async function updateUser(req,res){
 
 /**
  * @description Deletes a user and all associated data.
- * @param {object} req - The Express request object.
- * @param {object} res - The Express response object.
  */
 async function deleteUser(req, res) {
     try {
@@ -130,7 +137,7 @@ async function deleteUser(req, res) {
         await userModel.remove(req.query.email);
 
         console.log(`User with email: ${req.query.email} and all associated data were successfully deleted.`);
-        res.status(204).send(); // 204 No Content for a successful deletion.
+        res.status(204).send();
     } catch (error) {
         console.error('Error deleting user and related data:', error);
         res.status(500).json({ message: 'ERROR: User deletion failed' });
@@ -142,5 +149,5 @@ module.exports = {
   getUserId,
   getUserData,
   updateUser,
-  deleteUser 
+  deleteUser
 };

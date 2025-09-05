@@ -1,25 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/UserUser';
 import AddGardenModal from '../modal/AddGardenModal';
-import UserProfileModal from '../modal/UserProfileModal'; // Import the new modal
-import { deleteGardenApi } from '../utils/gardenUtil'; 
+import UserProfileModal from '../modal/UserProfileModal';
+import { deleteGardenApi } from '../utils/gardenUtil';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const { user, gardens, logout, refreshGardens, refreshBeds } = useUser();
+    const { userData, loading: userLoading, logout, refreshUserData } = useUser();
+    const user = userData?.user;
+    const gardens = userData?.gardens;
+
     const [loading, setLoading] = useState(false);
-    const [isGardenModalOpen, setIsGardenModalOpen] = useState(false); // Renamed for clarity
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New state for profile modal
-    // State to track the hovered garden
+    const [isGardenModalOpen, setIsGardenModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [hoveredGarden, setHoveredGarden] = useState(null);
+
 
     const handleLogout = async () => {
         setLoading(true);
-
         try {
             logout();
-            navigate('/'); // Call the logout function from context
+            navigate('/');
         } catch (error) {
             console.error("Logout failed:", error);
         } finally {
@@ -44,63 +46,60 @@ const HomePage = () => {
     };
 
     const handleGardenCreated = async () => {
-        await refreshGardens();
+        await refreshUserData();
         handleCloseGardenModal();
     };
 
-    // New event handler to set the hovered garden
     const handleMouseEnter = (garden) => {
         setHoveredGarden(garden);
     };
 
-    // New event handler to clear the hovered garden
     const handleMouseLeave = () => {
         setHoveredGarden(null);
     };
 
-    // New function to handle navigating to a garden's page
     const handleGardenClick = (gardenId) => {
-        refreshBeds(gardenId);
         navigate(`/garden/${gardenId}`);
     };
 
     const handleDeleteGarden = async (e, gardenId) => {
-        e.stopPropagation(); // Prevent the click from triggering the parent's onClick handler (handleGardenClick)
+        e.stopPropagation();
         if (window.confirm('Are you sure you want to delete this garden? This action cannot be undone.')) {
             try {
                 setLoading(true);
-                await deleteGardenApi(user.id, gardenId);
-                // Refresh the list to remove the deleted garden from the UI
-                await refreshGardens();
+                await deleteGardenApi(userData.id, gardenId);
+                await refreshUserData();
             } catch (error) {
                 console.error('Failed to delete garden:', error);
-                // Optionally, show an error message to the user
             } finally {
                 setLoading(false);
             }
         }
     };
 
+    if (userLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
+                <span className="text-lg font-semibold">Loading your gardens...</span>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-neutral-800 font-sans text-white">
             {/* Header */}
             <header className="flex items-center justify-between p-4 bg-neutral-900 border-b border-neutral-700">
-                {/* Left-aligned back button and header */}
                 <div className="flex items-center space-x-4">
                     <div className="text-xl font-bold tracking-wide">Your Gardens</div>
                 </div>
-                {/* Right-aligned user info and logout */}
                 <div className="flex items-center space-x-4">
-                    {/* Logout button (hidden on smaller screens) */}
                     <button
-                        className="hidden sm:block text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleLogout}
                         disabled={loading}
                     >
                         {loading ? 'Logging Out...' : 'Log Out'}
                     </button>
-                    {/* User profile button */}
                     <button onClick={handleOpenProfileModal} className="rounded-full bg-gray-600 p-2 hover:bg-gray-500 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -114,20 +113,17 @@ const HomePage = () => {
                 {/* Gardens List */}
                 <div className="flex-1 flex flex-col space-y-4">
                     <div className="bg-neutral-900 rounded-xl p-4 shadow-lg space-y-2">
-                        {/* Conditional rendering for gardens list */}
                         {gardens && gardens.length > 0 ? (
-                            // Use the spread operator to create a new array and then reverse it for display
                             [...gardens].reverse().map((garden) => (
                                 <div
                                     key={garden.id}
-                                    onClick={() => handleGardenClick(garden.id)} // Add the click handler here
+                                    onClick={() => handleGardenClick(garden.id)}
                                     className="flex items-center justify-between p-4 bg-neutral-700 rounded-lg shadow-md hover:bg-neutral-600 transition-colors cursor-pointer"
                                     onMouseEnter={() => handleMouseEnter(garden)}
                                     onMouseLeave={handleMouseLeave}
                                 >
                                     <div className="flex items-center space-x-2">
                                         <span className="text-lg">{garden.garden_name}</span>
-                                        {/* Conditional rendering for the yellow star */}
                                         {garden.is_active && (
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />

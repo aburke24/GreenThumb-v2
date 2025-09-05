@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, Ban } from 'lucide-react';
-import BedComponent from './BedComponent';
+import BedComponent from './BedView';
+import { useUser } from '../hooks/UserUser';
 
 const GardenView = ({
     gardenId,
@@ -16,57 +17,70 @@ const GardenView = ({
     setSelectedBedId,
     setUnsavedPositions,
     onEditBed,
-    onUnplaceBed,
-    getBedPlants,
+    onUnplaceBed
 }) => {
-    const cellSize = 10;
-    const [hoverCell, setHoverCell] = React.useState(null);
-    const [bedPlants, setBedPlants] = useState({}); 
+    const containerRef = useRef(null);
+    const [cellSize, setCellSize] = useState(10);
+    const [hoverCell, setHoverCell] = useState(null);
+    const [bedPlants, setBedPlants] = useState({});
 
-    // Get the selected bed's data, including its dimensions
-    const selectedBed = beds.find(bed => bed.bed_id === selectedBedId);
-    // Use the unsaved dimensions if they exist, otherwise use the bed's original dimensions
+    const selectedBed = beds.find(bed => bed.id === selectedBedId);
     const hoverBedWidth = unsavedPositions[selectedBedId]?.width || selectedBed?.width || 1;
     const hoverBedHeight = unsavedPositions[selectedBedId]?.height || selectedBed?.height || 1;
 
-    // Fetch plants for all beds when beds change
     useEffect(() => {
-        const fetchPlantsForBeds = async () => {
-            const plantsData = {};
-            
-            for (const bed of beds) {
-                if (bed.bed_id && getBedPlants) {
-                    try {
-                        const plants = await getBedPlants(gardenId,bed.bed_id);
-                        plantsData[bed.bed_id] = plants || [];
-                    } catch (error) {
-                        console.error(`Failed to fetch plants for bed ${bed.bed_id}:`, error);
-                        plantsData[bed.bed_id] = [];
-                    }
-                }
-            }
-            
-            setBedPlants(plantsData);
+        const fetchPlantsForBeds = () => {
+            const plantMap = {};
+            beds.forEach(bed => {
+                const plants = bed.plants;
+                plantMap[bed.id] = plants;
+            });
+            console.log("The bed plants are ", plantMap);
+            setBedPlants(plantMap);
         };
 
-        if (beds.length > 0) {
+        if (beds.length > 0 && gardenId) {
             fetchPlantsForBeds();
         }
-    }, [beds, getBedPlants]);
+    }, [gardenId, beds]);
 
-    // Handle resize from BedComponent
-    const handleResize = ({ bed_id, newWidth, newHeight }) => {
-        setUnsavedPositions(prev => ({
+    useEffect(() => {
+        const updateCellSize = () => {
+            if (!containerRef.current) return;
+
+            const { width, height } = containerRef.current.getBoundingClientRect();
+
+            const availableCellWidth = width / gardenWidth;
+            const availableCellHeight = height / gardenHeight;
+
+            const newCellSize = Math.max(10, Math.min(40, Math.floor(Math.min(availableCellWidth, availableCellHeight))));
+            setCellSize(newCellSize);
+        };
+
+        updateCellSize();
+
+        window.addEventListener('resize', updateCellSize);
+        return () => window.removeEventListener('resize', updateCellSize);
+    }, [gardenWidth, gardenHeight]);
+
+    const handleResize = ({ id, newWidth, newHeight, newTop, newLeft }) => {
+        // Remove plants that don't fit inside newWidth x newHeight bed
+
+
+        // Update unsaved positions as before
+        setUnsavedPositions((prev) => ({
             ...prev,
-            [bed_id]: {
-                ...prev[bed_id],
+            [id]: {
+                ...prev[id],
                 width: newWidth,
                 height: newHeight,
+                top: newTop,
+                left: newLeft,
             },
         }));
     };
 
-    // Handle mouse move over the garden grid
+
     const handleMouseMove = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
@@ -74,30 +88,28 @@ const GardenView = ({
         const hoveredCol = Math.floor(offsetX / cellSize);
         const hoveredRow = Math.floor(offsetY / cellSize);
 
-        // Check if a bed is selected and the hover area is within the garden bounds
         if (selectedBed && hoveredCol >= 0 && hoveredRow >= 0) {
-            // Check if the hover box will fit completely within the garden
             const fits =
-                (hoveredCol + hoverBedWidth <= gardenWidth) &&
-                (hoveredRow + hoverBedHeight <= gardenHeight);
+                hoveredCol + hoverBedWidth <= gardenWidth &&
+                hoveredRow + hoverBedHeight <= gardenHeight;
 
             setHoverCell({
                 row: hoveredRow,
                 col: hoveredCol,
-                fits: fits,
+                fits,
             });
         } else {
             setHoverCell(null);
         }
     };
 
-    // Clear hover when mouse leaves grid
     const handleMouseLeave = () => {
         setHoverCell(null);
     };
 
     return (
         <div
+            ref={containerRef}
             className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden"
             onClick={() => setSelectedBedId(null)}
         >
@@ -118,7 +130,6 @@ const GardenView = ({
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
-
                     const rect = e.currentTarget.getBoundingClientRect();
                     const offsetX = e.clientX - rect.left;
                     const offsetY = e.clientY - rect.top;
@@ -136,12 +147,10 @@ const GardenView = ({
                     {gardenWidth} x {gardenHeight}
                 </p>
 
-                {/* Garden grid cells */}
                 {Array.from({ length: gardenWidth * gardenHeight }).map((_, index) => (
                     <div key={index} className="bg-[#4E342E]"></div>
                 ))}
 
-                {/* Hover preview cell */}
                 {hoverCell && (
                     <div
                         className={`absolute pointer-events-none rounded-sm border ${hoverCell.fits ? 'bg-emerald-400/40 border-emerald-500' : 'bg-red-400/40 border-red-500'}`}
@@ -155,78 +164,88 @@ const GardenView = ({
                     />
                 )}
 
-                {/* Render beds with plant data */}
-                {beds.map((bed) => {
-                    const isUnsaved = bed.bed_id in unsavedPositions;
-                    const unsavedData = unsavedPositions[bed.bed_id];
-                    const isSelected = selectedBedId === bed.bed_id;
+                {beds.filter(bed => {
+                    const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
+                    const isBeingPlaced = selectedBedId === bed.id;
+                    return !isUnplaced || isBeingPlaced;
+                }).map((bed) => {
+                    const isUnsaved = bed.id in unsavedPositions;
+                    const unsavedData = unsavedPositions[bed.id] || {};
 
-                    const currentBedData = {
-                        ...bed,
-                        top_position: isUnsaved ? unsavedData.top : bed.top_position,
-                        left_position: isUnsaved ? unsavedData.left : bed.left_position,
-                        width: isUnsaved ? unsavedData.width : bed.width,
-                        height: isUnsaved ? unsavedData.height : bed.height,
-                    };
+                    const top_position = unsavedData.top ?? bed.top_position;
+                    const left_position = unsavedData.left ?? bed.left_position;
+                    const width = unsavedData.width ?? bed.width;
+                    const height = unsavedData.height ?? bed.height;
 
-                    if (
-                        currentBedData.left_position >= 0 &&
-                        currentBedData.top_position >= 0 &&
-                        currentBedData.left_position + currentBedData.width <= gardenWidth &&
-                        currentBedData.top_position + currentBedData.height <= gardenHeight
-                    ) {
-                        return (
-                            <div
-                                key={bed.bed_id}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onSelectBed && onSelectBed(bed.bed_id);
-                                }}
-                                className={`absolute cursor-pointer z-20 ${isSelected ? 'ring-4 ring-emerald-400' : ''}`}
-                                style={{
-                                    top: currentBedData.top_position * cellSize,
-                                    left: currentBedData.left_position * cellSize,
-                                    width: currentBedData.width * cellSize,
-                                    height: currentBedData.height * cellSize,
-                                }}
-                            >
-                                <BedComponent
-                                    bed={currentBedData}
-                                    plants={bedPlants[bed.bed_id] || []} // Pass plant data
-                                    isUnsaved={isUnsaved}
-                                    onConfirm={(newBedData) => onConfirmPlacement(bed.bed_id, newBedData)}
-                                    onCancel={() => onCancelPlacement(bed.bed_id)}
-                                    onResize={handleResize}
-                                />
-                                {isSelected && !isUnsaved && (
-                                    <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onEditBed(bed);
-                                            }}
-                                            className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
-                                            title="Edit Bed"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onUnplaceBed(bed);
-                                            }}
-                                            className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
-                                            title="Unplace Bed"
-                                        >
-                                            <Ban className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        );
+                    const isSelected = selectedBedId === bed.id;
+
+                    if (isSelected && top_position === -1 && left_position === -1) {
+                        return null;
                     }
+                    const isPlaced =
+                        top_position >= 0 &&
+                        left_position >= 0 &&
+                        top_position + height <= gardenHeight &&
+                        left_position + width <= gardenWidth;
 
-                    return null;
+                    return (
+                        <div
+                            key={bed.id}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectBed && onSelectBed(bed.id);
+                            }}
+                            className={`absolute cursor-pointer z-20 ${isSelected ? 'ring-4 ring-emerald-400' : ''}`}
+                            style={{
+                                top: top_position * cellSize,
+                                left: left_position * cellSize,
+                                width: width * cellSize,
+                                height: height * cellSize,
+                                opacity: isPlaced ? 1 : 0.5,
+                            }}
+                        >
+                            <BedComponent
+                                bed={{
+                                    ...bed,
+                                    width,
+                                    height,
+                                    top_position,
+                                    left_position,
+                                }}
+                                plants={bedPlants[bed.id] || []}
+                                isUnsaved={isUnsaved}
+                                isSelected={isSelected}
+                                onConfirm={(newBedData) => onConfirmPlacement(bed.id, newBedData)}
+                                onCancel={() => onCancelPlacement(bed.id)}
+                                onResize={(newBedData) => handleResize(newBedData)} cellSize={cellSize}
+                          
+                            />
+                            {isSelected && !isUnsaved && (
+                                <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditBed(bed);
+                                        }}
+                                        className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
+                                        title="Edit Bed"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onUnplaceBed(bed);
+                                        }}
+                                        className="bg-emerald-600/70 hover:bg-emerald-500 text-white rounded-full p-1"
+                                        title="Unplace Bed"
+                                    >
+                                        <Ban className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
                 })}
             </div>
         </div>

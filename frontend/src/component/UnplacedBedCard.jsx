@@ -15,7 +15,7 @@ const UnplacedBedCard = ({ bed, selected, handleBedClick, handleDeleteBed, handl
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleDeleteBed(bed.bed_id);
+          handleDeleteBed(bed.id);
         }}
         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         title="Delete bed"
@@ -38,7 +38,7 @@ const UnplacedBedCard = ({ bed, selected, handleBedClick, handleDeleteBed, handl
   src={planterPotImage} 
   alt="A planter pot" 
   style={{ width: '50px', height: '50px' }} 
-/>    <span className="font-medium text-white text-center break-words">{bed.bed_name}</span>
+/>    <span className="font-medium text-white text-center break-words">{bed.name}</span>
       <span className="text-xs text-gray-300 mt-1">
         {bed.width} x {bed.height}
       </span>

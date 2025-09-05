@@ -9,7 +9,7 @@ import {
     X,
     Pencil,
 } from 'lucide-react';
-import Bed from '../component/Bed';
+import Bed from '../component/BedEditor';
 import PlantCatalog from '../PlantCatalog.json';
 import { useUser } from '../hooks/UserUser';
 import { updateBedApi } from '../utils/bedUtil';
@@ -27,11 +27,14 @@ const getPlantDimensions = (spacing) => {
 };
 
 const EditBedPage = () => {
-    const { bedId, gardenId } = useParams();
-    const { userId, bed, refreshBed, loading, refreshPlants, plants, refreshBeds, getGarden } = useUser();
+    const { gardenId, bedId } = useParams();
+    // Access the comprehensive userData and helper functions from the hook
+    const { userData, loading, refreshUserData } = useUser();
 
     const navigate = useNavigate();
+    const [originalHeader, setOriginalHeader] = useState({ name: '', width: 0, height: 0 });
     const [bedName, setBedName] = useState('');
+    const [bed, setBed] = useState('');
     const [width, setWidth] = useState(0);
     const [height, setHeight] = useState(0);
     const [hasUnsavedHeader, setHasUnsavedHeader] = useState(false);
@@ -41,18 +44,18 @@ const EditBedPage = () => {
     const [showPlantCatalogModal, setShowPlantCatalogModal] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-
     const [activePlant, setActivePlant] = useState(null);
     const [bedLayout, setBedLayout] = useState([]);
     const [plantsInBed, setPlantsInBed] = useState([]);
     const [allPlants, setAllPlants] = useState([]);
     const bedContainerRef = useRef(null);
     const [bedContainerDimensions, setBedContainerDimensions] = useState({ width: 0, height: 0 });
-    const [garden, setGarden] = useState('');
+    const [garden, setGarden] = useState(null);
     const [hoveredCell, setHoveredCell] = useState(null);
     const [activePlantButtons, setActivePlantButtons] = useState(Array(5).fill(null));
     const [editingButtonIndex, setEditingButtonIndex] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+
 
     // Use ResizeObserver to get the available dimensions for the bed grid
     useEffect(() => {
@@ -74,34 +77,50 @@ const EditBedPage = () => {
         }
     }, [allPlants]);
 
-    // Populate local state with bed and plants data
+    // Populate local state with bed and plants data from the context
     useEffect(() => {
-        if (bed) {
-            setBedName(bed.name);
-            setWidth(bed.width);
-            setHeight(bed.height);
-            setGarden(getGarden(gardenId));
-        }
+        if (userData) {
+            console.log("UserData", userData);
+            console.log("The gardenId is", gardenId);
+            const foundGarden = userData.gardens.find(garden => garden.id == gardenId);
+            setGarden(foundGarden);
 
-        if (bed && plants) {
-            const newLayout = Array.from({ length: bed.height }, () =>
-                Array.from({ length: bed.width }, () => null)
-            );
+            const bedsInGarden = foundGarden.beds;
+            const foundBed = bedsInGarden.find(b => parseInt(b.id) === parseInt(bedId));
 
-            plants.forEach(plant => {
-                const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
-                for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
-                    for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
-                        if (newLayout[r] && newLayout[r][c] !== undefined) {
-                            newLayout[r][c] = plant;
+            if (foundBed) {
+                setBedName(foundBed.name);
+                setBed(foundBed);
+                setWidth(foundBed.width);
+                setHeight(foundBed.height);
+                setHasUnsavedHeader(false);
+                setOriginalHeader({
+                    name: foundBed.name,
+                    width: foundBed.width,
+                    height: foundBed.height,
+                });
+
+                const plantsInBed = foundBed.plants;
+                setPlantsInBed(plantsInBed);
+
+                const newLayout = Array.from({ length: foundBed.height }, () =>
+                    Array.from({ length: foundBed.width }, () => null)
+                );
+
+                plantsInBed.forEach(plant => {
+                    const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                    for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
+                        for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
+                            if (newLayout[r] && newLayout[r][c] !== undefined) {
+                                newLayout[r][c] = plant;
+                            }
                         }
                     }
-                }
-            });
-            setBedLayout(newLayout);
-            setPlantsInBed(plants);
+                });
+                setBedLayout(newLayout);
+            }
         }
-    }, [bed, plants]);
+    }, [userData, setGarden, gardenId, bedId]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -119,7 +138,12 @@ const EditBedPage = () => {
     }, []);
 
     const checkForHeaderChanges = (name, w, h) => {
-        setHasUnsavedHeader(name !== bed.name || w !== bed.width || h !== bed.height);
+        const changed =
+            name !== originalHeader.name ||
+            w !== originalHeader.width ||
+            h !== originalHeader.height;
+
+        setHasUnsavedHeader(changed);
     };
 
     const handleNameChange = (e) => {
@@ -131,9 +155,7 @@ const EditBedPage = () => {
     const handleWidthChange = (e) => {
         const val = e.target.value;
         const newWidth = val === "" ? "" : Number(val);
-
         setWidth(newWidth);
-        setPlantsInBed([]);
         if (newWidth !== "") {
             setBedLayout(Array.from({ length: height }, () => Array.from({ length: newWidth }, () => null)));
         }
@@ -144,13 +166,10 @@ const EditBedPage = () => {
     const handleHeightChange = (e) => {
         const val = e.target.value;
         const newHeight = val === '' ? '' : Number(val);
-
         setHeight(newHeight);
-        setPlantsInBed([]);
         if (newHeight !== '') {
             setBedLayout(Array.from({ length: newHeight }, () => Array.from({ length: width }, () => null)));
         }
-
         setHasUnsavedPlants(true);
         checkForHeaderChanges(bedName, width, newHeight);
     };
@@ -162,57 +181,86 @@ const EditBedPage = () => {
                 return;
             }
         }
-        refreshBeds(gardenId);
+        refreshUserData(); // Single refresh call on exit
         navigate(-1);
     };
 
     const handleSaveHeader = async () => {
-        if (width > garden.width || height > garden.height) {
+        if (!garden || width > garden.width || height > garden.height) {
             alert("Bed dimensions cannot be larger than the garden's dimensions. Please adjust the width and height.");
             return;
         }
-
-        setIsSaving(true);
-        setHasUnsavedHeader(false);
 
         const headerDataToSave = {
             name: bedName,
             width: width,
             height: height
         };
+
         try {
-            await updateBedApi(userId, gardenId, bedId, headerDataToSave);
-            refreshBed(gardenId, bedId);
+            await updateBedApi(userData.id, gardenId, bedId, headerDataToSave);
+            setOriginalHeader(headerDataToSave);
+            setHasUnsavedHeader(false);
+
+            const filteredPlants = plantsInBed.filter(plant => {
+                const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                return (
+                    plant.x_position + plantW <= width &&
+                    plant.y_position + plantH <= height
+                );
+            });
+
+            const newLayout = Array.from({ length: height }, () =>
+                Array.from({ length: width }, () => null)
+            );
+
+            filteredPlants.forEach(plant => {
+                const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
+                    for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
+                        if (newLayout[r] && newLayout[r][c] !== undefined) {
+                            newLayout[r][c] = plant;
+                        }
+                    }
+                }
+            });
+
+            setPlantsInBed(filteredPlants);
+            setBedLayout(newLayout);
+            setHasUnsavedPlants(false);
+
+            await updatePlantsApi(userData.id, gardenId, bedId, filteredPlants);
+
+            await refreshUserData();
+
         } catch (error) {
-            console.error('Failed to save header:', error);
+            console.error('Failed to save header or update plants:', error);
             setHasUnsavedHeader(true);
-        } finally {
-            setIsSaving(false);
         }
     };
 
+
+
     const handleCancelHeaderChanges = () => {
-        setBedName(bed.bed_name);
-        setWidth(bed.bed_width);
-        setHeight(bed.bed_height);
+        const originalBed = garden.beds?.find(b => b.id === bedId);
+        if (originalBed) {
+            setBed(originalBed);
+            setBedName(originalBed.name);
+            setWidth(originalBed.width);
+            setHeight(originalBed.height);
+        }
         setHasUnsavedHeader(false);
-        refreshBed(gardenId, bedId);
     };
 
     const handleSavePlants = async () => {
-        setIsSaving(true);
-        setHasUnsavedPlants(false);
 
-        const plantsDataToSave = { plants: plantsInBed };
-        console.log("We are saving plants!!");
         try {
-            await updatePlantsApi(userId, gardenId, bedId, plantsDataToSave.plants);
-            refreshPlants(gardenId, bedId);
+            await updatePlantsApi(userData.id, gardenId, bedId, plantsInBed);
+            setHasUnsavedPlants(false);
+            await refreshUserData(); // Refresh all data from the API after saving
         } catch (error) {
             console.error('Failed to save plants:', error);
             setHasUnsavedPlants(true);
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -221,17 +269,19 @@ const EditBedPage = () => {
             const updatedButtons = [...activePlantButtons];
             updatedButtons[editingButtonIndex] = plant;
             setActivePlantButtons(updatedButtons);
-            setActivePlant(plant); // Set the newly selected plant as active
+            setActivePlant(plant);
             setShowPlantCatalogModal(false);
             setEditingButtonIndex(null);
         }
     };
 
     const handleCancelPlantChanges = () => {
-        const newLayout = Array.from({ length: bed.height }, () =>
-            Array.from({ length: bed.width }, () => null)
+        const originalPlants = bed.plants;
+
+        const newLayout = Array.from({ length: height }, () =>
+            Array.from({ length: width }, () => null)
         );
-        plants.forEach(plant => {
+        originalPlants.forEach(plant => {
             const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
             for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
                 for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
@@ -242,13 +292,12 @@ const EditBedPage = () => {
             }
         });
         setBedLayout(newLayout);
-        setPlantsInBed(plants);
+        setPlantsInBed(originalPlants);
         setHasUnsavedPlants(false);
     };
 
     const handleClearBed = () => {
         const confirmed = window.confirm("Are you sure you want to clear all plants from this bed? This action cannot be undone.");
-
         if (confirmed) {
             setBedLayout(Array.from({ length: height }, () => Array.from({ length: width }, () => null)));
             setPlantsInBed([]);
@@ -297,7 +346,6 @@ const EditBedPage = () => {
 
         if (!activePlant) return;
 
-        console.log("the active plant is ", activePlant);
         const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
         if (row + plantH > height || col + plantW > width) {
             return;
@@ -333,7 +381,7 @@ const EditBedPage = () => {
         setHasUnsavedPlants(true);
     };
 
-    if (loading || !bed) {
+    if (loading || !userData || !garden) {
         return (
             <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
                 <span className="text-lg font-semibold">Loading bed...</span>
@@ -343,6 +391,7 @@ const EditBedPage = () => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-neutral-800 text-white font-sans antialiased overflow-hidden">
+            {/* ... (rest of the component, which is unchanged) ... */}
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-neutral-900 border-b border-neutral-700">
                 <div className="flex items-center justify-between w-full sm:w-auto mb-4 sm:mb-0">
@@ -390,21 +439,20 @@ const EditBedPage = () => {
                     />
                     <button
                         onClick={handleSaveHeader}
-                        disabled={!hasUnsavedHeader || isSaving}
+                        disabled={!hasUnsavedHeader}
                         className={`flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 rounded-lg transition w-full sm:w-auto
-                            ${!hasUnsavedHeader || isSaving
+                            ${!hasUnsavedHeader
                                 ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                 : 'bg-emerald-600 hover:bg-emerald-500'
                             }`}
                     >
                         <Save className="w-5 h-5" />
-                        <span>{isSaving ? 'Saving...' : 'Save Bed Info'}</span>
                     </button>
                     <button
                         onClick={handleCancelHeaderChanges}
-                        disabled={!hasUnsavedHeader || isSaving}
+                        disabled={!hasUnsavedHeader}
                         className={`flex items-center justify-center sm:justify-start space-x-2 px-4 py-2 rounded-lg transition w-full sm:w-auto
-                            ${!hasUnsavedHeader || isSaving
+                            ${!hasUnsavedHeader
                                 ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                 : 'bg-red-600 hover:bg-red-500'
                             }`}
@@ -430,7 +478,10 @@ const EditBedPage = () => {
                         onCellHover={handleCellHover}
                         onCellLeave={handleCellLeave}
                         hoveredCell={hoveredCell}
+                        isDragging={isDragging} 
+                         setIsDragging={setIsDragging}
                     />
+                
                 </div>
 
                 {/* RIGHT: Action Sidebar */}
@@ -438,39 +489,45 @@ const EditBedPage = () => {
                     <div className="flex flex-row justify-center space-x-4 sm:flex-col sm:space-x-0 sm:space-y-4 sm:bg-neutral-700 sm:rounded-xl sm:p-4">
                         {!showPlantList ? (
                             <>
+                                {/* Save Plants */}
+                                <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode(false);
                                         handleSavePlants();
                                     }}
-                                    disabled={!hasUnsavedPlants || isSaving}
+                                    disabled={!hasUnsavedPlants}
                                     className={`group rounded-full p-3 flex items-center justify-center relative transition
-                                        ${isSaving
-                                            ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
-                                            : hasUnsavedPlants
-                                                ? 'bg-yellow-500 hover:bg-yellow-400'
-                                                : 'bg-emerald-600 text-white'
+        ${hasUnsavedPlants
+                                            ? 'bg-yellow-500 hover:bg-yellow-400'
+                                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                         }`}
                                     aria-label="Save bed changes"
                                 >
                                     <Save className="w-6 h-6 text-white" />
-                                    <Tooltip text={isSaving ? 'Saving...' : 'Save Plants'} />
+                                    <Tooltip text="Save Plant Changes" />
                                 </button>
+                                    <span className="text-xs text-white">Save Plants</span>
+                                </div>
+
+                                {/* Cancel Plants */}
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={handleCancelPlantChanges}
-                                    disabled={!hasUnsavedPlants || isSaving}
+                                    disabled={!hasUnsavedPlants}
                                     className={`group rounded-full p-3 flex items-center justify-center relative transition
-                                        ${isSaving
-                                            ? 'bg-neutral-700 text-gray-500 cursor-not-allowed'
-                                            : hasUnsavedPlants
-                                                ? 'bg-red-500 hover:bg-red-400'
-                                                : 'bg-neutral-600 text-gray-400'
+        ${hasUnsavedPlants
+                                            ? 'bg-red-600 hover:bg-red-500'
+                                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
                                         }`}
                                     aria-label="Cancel plant changes"
                                 >
                                     <X className="w-6 h-6 text-white" />
                                     <Tooltip text="Cancel Plant Changes" />
                                 </button>
+                                    <span className="text-xs text-white">Cancel Changes</span>
+                                </div>
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         console.log("Add Plants button clicked");
@@ -483,6 +540,9 @@ const EditBedPage = () => {
                                     <PlusCircle className="w-6 h-6 text-white" />
                                     <Tooltip text="Add plant" />
                                 </button>
+                                    <span className="text-xs text-white">Add Plant</span>
+                               </div>
+                                <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         setIsDeleteMode((prev) => !prev);
@@ -498,6 +558,9 @@ const EditBedPage = () => {
                                     <Trash2 className="w-6 h-6 text-white" />
                                     <Tooltip text="Delete plant" />
                                 </button>
+                                    <span className="text-xs text-white">Delete Plant</span>
+                                </div>
+                                 <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={() => {
                                         handleClearBed();
@@ -509,17 +572,22 @@ const EditBedPage = () => {
                                     <RefreshCw className="w-6 h-6 text-white" />
                                     <Tooltip text="Clear bed" />
                                 </button>
+                                    <span className="text-xs text-white">Clear Plants</span>
+                                </div>
                             </>
                         ) : (
                             <>
+                            <div className="flex flex-col items-center space-y-1">
                                 <button
                                     onClick={handlePlantListBack}
                                     className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
                                     aria-label="Back to actions"
                                 >
-                                    <X className="w-6 h-6 text-white" />
+                                    <ChevronLeft className="w-6 h-6 text-white" />
                                     <Tooltip text="Back" />
                                 </button>
+                                    <span className="text-xs text-white">Return to Actions</span>
+                                </div>
                                 {activePlantButtons.map((plant, index) => (
                                     <div key={index} className="relative group w-24 h-24">
                                         <button

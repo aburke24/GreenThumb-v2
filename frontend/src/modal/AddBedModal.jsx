@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { createBedApi } from '../utils/bedUtil';
-import { useUser } from '../hooks/UserUser';
 
-const AddBedModal = ({ isOpen, onClose, userId, gardenId, onSuccess }) => {
+const AddBedModal = ({ isOpen, onClose, userId, garden, onSuccess }) => {
   const [bedName, setBedName] = useState('');
   const [width, setWidth] = useState(5);
   const [height, setHeight] = useState(5);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { getGarden } = useUser();
-
+  const gardenId = garden.id
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -23,7 +21,6 @@ const AddBedModal = ({ isOpen, onClose, userId, gardenId, onSuccess }) => {
     }
     
     // Get the parent garden's dimensions for validation
-    const garden = getGarden(gardenId);
     if (!garden) {
         setError('Garden not found.');
         return;
