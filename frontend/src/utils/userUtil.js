@@ -34,6 +34,7 @@ async function fetchUserApi(userId) {
         }
 
         const userData = await response.json();
+        console.log("Fetching the user data ", userData);
         return userData;
 
     } catch (error) {

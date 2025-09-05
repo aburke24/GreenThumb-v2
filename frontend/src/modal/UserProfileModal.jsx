@@ -7,7 +7,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
     // Access the comprehensive userData and helper functions from the hook
     const { userData, logout, refreshUserData } = useUser();
     const navigate = useNavigate();
-    const user = userData?.user;
+    const user = userData;
 
     const [formData, setFormData] = useState({
         username: '',
@@ -20,15 +20,17 @@ const UserProfileModal = ({ isOpen, onClose }) => {
 
     // Pre-populate form data when the modal opens or user data changes
     useEffect(() => {
-        if (user) {
-            setFormData({
-                username: user.username || '',
-                email: user.email || '',
-                city: user.city || '',
-                state: user.state || ''
-            });
-        }
-    }, [user, isOpen]);
+    if (isOpen && user) {
+        
+        setFormData({
+            username: user.username || '',
+            email: user.email || '',
+            city: user.city || '',
+            state: user.state || ''
+        });
+    }
+}, [isOpen, user]);
+
 
     // Handle form input changes
     const handleChange = (e) => {
@@ -120,7 +122,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                             name="username"
                             value={formData.username}
                             onChange={handleChange}
-                            className="mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className="text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         />
                     </div>
                     <div>
@@ -131,7 +133,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className="text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         />
                     </div>
                     <div>
@@ -142,18 +144,18 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                             name="city"
                             value={formData.city}
                             onChange={handleChange}
-                            className="mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className="text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         />
                     </div>
                     <div>
-                        <label htmlFor="state" className="block text-sm font-medium text-gray-400">State</label>
+                        <label htmlFor="state" className=" text-whiteblock text-sm font-medium text-gray-400">State</label>
                         <input
                             type="text"
                             id="state"
                             name="state"
                             value={formData.state}
                             onChange={handleChange}
-                            className="mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className=" text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         />
                     </div>
                 </div>

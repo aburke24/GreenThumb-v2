@@ -10,7 +10,7 @@ const HomePage = () => {
     const { userData, loading: userLoading, logout, refreshUserData } = useUser();
     const user = userData?.user;
     const gardens = userData?.gardens;
-    
+
     const [loading, setLoading] = useState(false);
     const [isGardenModalOpen, setIsGardenModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -59,7 +59,6 @@ const HomePage = () => {
     };
 
     const handleGardenClick = (gardenId) => {
-        console.log("The gardenId is ", gardenId);
         navigate(`/garden/${gardenId}`);
     };
 
@@ -68,7 +67,7 @@ const HomePage = () => {
         if (window.confirm('Are you sure you want to delete this garden? This action cannot be undone.')) {
             try {
                 setLoading(true);
-                await deleteGardenApi(user.id, gardenId);
+                await deleteGardenApi(userData.id, gardenId);
                 await refreshUserData();
             } catch (error) {
                 console.error('Failed to delete garden:', error);
@@ -85,7 +84,7 @@ const HomePage = () => {
             </div>
         );
     }
-    
+
     return (
         <div className="flex flex-col min-h-screen bg-neutral-800 font-sans text-white">
             {/* Header */}
@@ -95,7 +94,7 @@ const HomePage = () => {
                 </div>
                 <div className="flex items-center space-x-4">
                     <button
-                        className="hidden sm:block text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleLogout}
                         disabled={loading}
                     >

@@ -3,7 +3,7 @@ import { createGardenApi } from '../utils/gardenUtil';
 import { useUser } from '../hooks/UserUser';
 
 const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
-    const { user } = useUser();
+    const { userData } = useUser();
     const [newGardenData, setNewGardenData] = useState({ garden_name: '', width: '', height: '' });
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState('');
@@ -41,7 +41,7 @@ const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
         try {
             setLoading(true);
             const createdGarden = await createGardenApi(
-                user.id,
+                userData.id,
                 newGardenData.garden_name,
                 width,
                 height

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, Ban } from 'lucide-react';
 import BedComponent from './BedComponent';
-
+import { useUser } from '../hooks/UserUser';
 
 const GardenView = ({
     gardenId,
@@ -17,16 +17,15 @@ const GardenView = ({
     setSelectedBedId,
     setUnsavedPositions,
     onEditBed,
-    onUnplaceBed,
-    getBedPlants,
+    onUnplaceBed
 }) => {
-    const cellSize = 10;
+    const { userData, refreshUserData } = useUser();
+    const containerRef = useRef(null);
+    const [cellSize, setCellSize] = useState(10);
     const [hoverCell, setHoverCell] = useState(null);
     const [bedPlants, setBedPlants] = useState({});
 
-      // Get the selected bed's data, including its dimensions
     const selectedBed = beds.find(bed => bed.id === selectedBedId);
-    // Use the unsaved dimensions if they exist, otherwise use the bed's original dimensions
     const hoverBedWidth = unsavedPositions[selectedBedId]?.width || selectedBed?.width || 1;
     const hoverBedHeight = unsavedPositions[selectedBedId]?.height || selectedBed?.height || 1;
 
@@ -34,29 +33,54 @@ const GardenView = ({
         const fetchPlantsForBeds = () => {
             const plantMap = {};
             beds.forEach(bed => {
-                const plants = getBedPlants(gardenId, bed.id);
+                const plants = bed.plants;
                 plantMap[bed.id] = plants;
             });
+            console.log("The bed plants are ", plantMap);
             setBedPlants(plantMap);
         };
 
         if (beds.length > 0 && gardenId) {
             fetchPlantsForBeds();
         }
-    }, [gardenId, beds, getBedPlants]);
+    }, [gardenId, beds]);
+
+    useEffect(() => {
+        const updateCellSize = () => {
+            if (!containerRef.current) return;
+
+            const { width, height } = containerRef.current.getBoundingClientRect();
+
+            const availableCellWidth = width / gardenWidth;
+            const availableCellHeight = height / gardenHeight;
+
+            const newCellSize = Math.max(10, Math.min(40, Math.floor(Math.min(availableCellWidth, availableCellHeight))));
+            setCellSize(newCellSize);
+        };
+
+        updateCellSize();
+
+        window.addEventListener('resize', updateCellSize);
+        return () => window.removeEventListener('resize', updateCellSize);
+    }, [gardenWidth, gardenHeight]);
 
     const handleResize = ({ id, newWidth, newHeight, newTop, newLeft }) => {
-        setUnsavedPositions(prev => ({
+        // Remove plants that don't fit inside newWidth x newHeight bed
+
+
+        // Update unsaved positions as before
+        setUnsavedPositions((prev) => ({
             ...prev,
             [id]: {
                 ...prev[id],
                 width: newWidth,
                 height: newHeight,
-                top_position: newTop,
-                left_position: newLeft
+                top: newTop,
+                left: newLeft,
             },
         }));
     };
+
 
     const handleMouseMove = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -86,6 +110,7 @@ const GardenView = ({
 
     return (
         <div
+            ref={containerRef}
             className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden"
             onClick={() => setSelectedBedId(null)}
         >
@@ -113,7 +138,7 @@ const GardenView = ({
                     const clickedRow = Math.floor(offsetY / cellSize);
 
                     if (onGardenClick) {
-                        onGardenClick({ row: clickedRow, col: clickedCol});
+                        onGardenClick({ row: clickedRow, col: clickedCol });
                     }
                 }}
                 onMouseMove={handleMouseMove}
@@ -140,23 +165,24 @@ const GardenView = ({
                     />
                 )}
 
-                {beds.map((bed) => {
+                {beds.filter(bed => {
+                    const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
+                    const isBeingPlaced = selectedBedId === bed.id;
+                    return !isUnplaced || isBeingPlaced;
+                }).map((bed) => {
                     const isUnsaved = bed.id in unsavedPositions;
-                    const unsavedData = isUnsaved ? unsavedPositions[bed.id] : {};
+                    const unsavedData = unsavedPositions[bed.id] || {};
+
+                    const top_position = unsavedData.top ?? bed.top_position;
+                    const left_position = unsavedData.left ?? bed.left_position;
+                    const width = unsavedData.width ?? bed.width;
+                    const height = unsavedData.height ?? bed.height;
+
                     const isSelected = selectedBedId === bed.id;
 
-                    const currentBedData = {
-                        ...bed,
-                        ...unsavedData,
-                    };
-
-                    const {
-                        top_position = 0,
-                        left_position = 0,
-                        width = 1,
-                        height = 1,
-                    } = currentBedData;
-
+                    if (isSelected && top_position === -1 && left_position === -1) {
+                        return null;
+                    }
                     const isPlaced =
                         top_position >= 0 &&
                         left_position >= 0 &&
@@ -180,12 +206,20 @@ const GardenView = ({
                             }}
                         >
                             <BedComponent
-                                bed={currentBedData}
+                                bed={{
+                                    ...bed,
+                                    width,
+                                    height,
+                                    top_position,
+                                    left_position,
+                                }}
                                 plants={bedPlants[bed.id] || []}
                                 isUnsaved={isUnsaved}
+                                isSelected={isSelected}
                                 onConfirm={(newBedData) => onConfirmPlacement(bed.id, newBedData)}
                                 onCancel={() => onCancelPlacement(bed.id)}
-                                onResize={(newBedData) => handleResize(newBedData)}
+                                onResize={(newBedData) => handleResize(newBedData)} cellSize={cellSize}
+                          
                             />
                             {isSelected && !isUnsaved && (
                                 <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">

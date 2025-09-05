@@ -3,14 +3,15 @@ import { Check, X } from 'lucide-react';
 
 const BedComponent = ({
     bed,
-    plants = [],
+    plants = [], 
     isUnsaved = false,
     onConfirm,
     onCancel,
     onResize,
-}) => {
+    cellSize,
+    isSelected
 
-    const cellSize = 10;
+}) => {
     const { width, height, top_position, left_position } = bed;
 
     const [currentWidth, setCurrentWidth] = useState(width);
@@ -18,13 +19,21 @@ const BedComponent = ({
     const [currentTop, setCurrentTop] = useState(top_position);
     const [currentLeft, setCurrentLeft] = useState(left_position);
     const [isResizing, setIsResizing] = useState(false);
-
+    
     useEffect(() => {
         setCurrentWidth(width);
         setCurrentHeight(height);
         setCurrentTop(top_position);
         setCurrentLeft(left_position);
-    }, [width, height, top_position, left_position]);
+    }, [width, height, top_position, left_position, plants]);
+
+    const getPlantDimensions = (spacing) => {
+        const s = parseInt(spacing);
+        if (s === 1) return { width: 1, height: 1 };
+        if (s === 4) return { width: 2, height: 2 };
+        if (s === 9) return { width: 3, height: 3 };
+        return { width: 1, height: 1 };
+    };
 
     const handleResize = (e) => {
         e.stopPropagation();
@@ -71,11 +80,12 @@ const BedComponent = ({
                     newTop = startTop + deltaH;
                 }
             }
-
+            
             setCurrentWidth(newWidth);
             setCurrentHeight(newHeight);
             setCurrentTop(newTop);
             setCurrentLeft(newLeft);
+            
             onResize?.({
                 id: bed.id,
                 newWidth,
@@ -95,14 +105,6 @@ const BedComponent = ({
         window.addEventListener('mouseup', stopDrag);
     };
 
-    const getPlantDimensions = (spacing) => {
-        const s = parseInt(spacing);
-        if (s === 1) return { width: 1, height: 1 };
-        if (s === 4) return { width: 2, height: 2 };
-        if (s === 9) return { width: 3, height: 3 };
-        return { width: 1, height: 1 };
-    };
-
     const processedPlants = plants.map(plant => {
         const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
         return {
@@ -113,28 +115,27 @@ const BedComponent = ({
     });
 
     const renderGridCells = () => {
-        const cols = isUnsaved ? currentWidth : width;
-        const rows = isUnsaved ? currentHeight : height;
+        const cols = isUnsaved ? currentWidth : bed.width;
+        const rows = isUnsaved ? currentHeight : bed.height;
 
         return Array.from({ length: cols * rows }).map((_, i) => {
             const x = i % cols;
             const y = Math.floor(i / cols);
 
-            const isOccupied = processedPlants.some(plant => {
+            const isOccupied = plants.some(plant => {
+                const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
                 return (
                     x >= plant.x_position &&
-                    x < plant.x_position + plant.plantWidth &&
+                    x < plant.x_position + plantW &&
                     y >= plant.y_position &&
-                    y < plant.y_position + plant.plantHeight
+                    y < plant.y_position + plantH
                 );
             });
-
-            let cellBgClass = isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]';
 
             return (
                 <div
                     key={i}
-                    className={`${cellBgClass}`}
+                    className={isOccupied ? 'bg-[#3E2723]' : 'bg-[#4E342E]'}
                     style={{
                         borderRight: '1px solid rgba(255, 255, 255, 0.2)',
                         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
@@ -163,7 +164,7 @@ const BedComponent = ({
         >
             {renderGridCells()}
 
-            {processedPlants.map((plant) => (
+            {!isResizing && processedPlants.map((plant) => (
                 <div
                     key={plant.id || plant.plant_id}
                     className="absolute z-20 items-center justify-center"
@@ -203,12 +204,21 @@ const BedComponent = ({
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
+                        // Re-filter the original plants prop on confirmation
+                        const filteredPlants = plants.filter(plant => {
+                            const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
+                            const fitsHorizontally = plant.x_position + plantW <= currentWidth;
+                            const fitsVertically = plant.y_position + plantH <= currentHeight;
+                            return fitsHorizontally && fitsVertically;
+                        });
+                        
                         onConfirm({
                             ...bed,
                             top: currentTop,
                             left: currentLeft,
                             width: currentWidth,
                             height: currentHeight,
+                            plants: filteredPlants,
                         });
                     }}
                     className="absolute top-1 left-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full p-[2px] shadow z-30"
@@ -231,7 +241,7 @@ const BedComponent = ({
                 </button>
             )}
 
-            {isUnsaved && (
+            {isSelected && (
                 <>
                     <div className="absolute top-0 left-0 w-3 h-3 cursor-nwse-resize top-handle left-handle z-40" onMouseDown={handleResize} />
                     <div className="absolute top-0 right-0 w-3 h-3 cursor-nesw-resize top-handle right-handle z-40" onMouseDown={handleResize} />
@@ -247,6 +257,5 @@ const BedComponent = ({
         </div>
     );
 };
-
 
 export default BedComponent;
