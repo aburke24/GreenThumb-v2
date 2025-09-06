@@ -2,8 +2,7 @@
  * @file db.js
  * @description Establishes and exports the PostgreSQL database connection pool.
  *
- * This file is a central point for all database interactions to avoid
- * circular dependencies and ensure a single connection instance is used.
+ * This file is a central point for all database interactions.
  */
 
 const { Pool } = require('pg');
@@ -13,11 +12,18 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    // This is necessary to prevent connection errors on services like Railway,
+    // which use SSL connections.
+    rejectUnauthorized: false,
+  },
+});
+
+// Add an event listener to the pool for error logging
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
 });
 
 // Export the pool so other files can import and use it.

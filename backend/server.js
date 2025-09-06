@@ -26,10 +26,7 @@ const plantRoutes = require('./routes/plant');
 // Create Express app only once
 const app = express();
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true,
-}));
+app.use(cors());
 
 const PORT = process.env.PORT || 3001;
 
