@@ -10,7 +10,7 @@ import {
     Pencil,
 } from 'lucide-react';
 import Bed from '../component/BedEditor';
-import PlantCatalog from '../PlantCatalog.json';
+import PlantCatalog from '../plantCatalog.json';
 import { useUser } from '../hooks/UserUser';
 import { updateBedApi } from '../utils/bedUtil';
 import { updatePlantsApi } from '../utils/plantsUtil';
