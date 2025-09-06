@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import PlantCatalog from '../PlantCatalog.json';
+import PlantCatalog from '../plantCatalog.json';
 
 const PlantCatalogModal = ({ isOpen, onClose, onSelect, selectedPlantId, activePlantButtons }) => {
     // If the modal isn't open, render nothing
