@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { UserProvider } from './context/UserProvider';
 import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignUpPage';
+import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import GardenPage from './pages/GardenPage';
 import EditBedPage from './pages/EditBedPage'; // Import the new GardenPage
