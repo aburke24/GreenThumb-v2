@@ -12,7 +12,6 @@ import logo from '../assets/GreenThumbLogo.svg'
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, loading: userLoading, login } = useUser();
@@ -30,6 +29,12 @@ const LoginPage = () => {
     }
   }, [user, userLoading, navigate]);
 
+    /**
+     * Handles the form submission for the login process.
+     * It prevents the default form behavior, resets the error state,
+     * and calls the loginApi with the provided credentials.
+     * It updates the loading state and handles any errors that occur.
+     */
     const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
