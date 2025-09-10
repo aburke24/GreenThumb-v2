@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginApi } from '../utils/authUtil';
 import { useUser } from '../hooks/UserUser'; 
+import logo from '../assets/GreenThumbLogo.svg'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -11,9 +12,8 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { user, loading: userLoading, login } = useUser();  // Grab login & user from context
+  const { user, loading: userLoading, login } = useUser();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user && !userLoading) {
       navigate('/home');
@@ -26,12 +26,10 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      // The loginApi should return both the token AND the user object
       const response = await loginApi(email, password);
-      const { token, user: userData } = response; // Destructure token and user data from the response
+      const { token, user: userData } = response;
 
       if (token && userData) {
-        // Pass the full user object to the context login function
         await login(userData, token);
         navigate('/home');
       } else {
@@ -49,7 +47,9 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-neutral-800 flex items-center justify-center font-inter antialiased">
         <div className="max-w-md w-full bg-neutral-900 p-8 rounded-xl shadow-xl border border-neutral-700">
-          <h1 className="text-3xl font-bold text-white text-center mb-6">Welcome Back</h1>
+          <div className="flex justify-center mb-6">
+            <img src={logo} alt="Green Thumb Logo" className="h-40 w-auto" />
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-1">
@@ -93,7 +93,7 @@ const LoginPage = () => {
                 disabled={loading}
                 className="flex-1 bg-emerald-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-emerald-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Logging in...' : 'Log In'}
+                {loading ? 'Log In' : 'Log In'}
               </button>
             </div>
           </form>
