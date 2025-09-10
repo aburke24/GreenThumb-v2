@@ -5,17 +5,26 @@ import AddGardenModal from '../modal/AddGardenModal';
 import UserProfileModal from '../modal/UserProfileModal';
 import { deleteGardenApi } from '../utils/gardenUtil';
 
+/**
+ * HomePage component displays the user's list of gardens.
+ * It provides functionality to view, add, and delete gardens,
+ * and also allows the user to log out and view their profile.
+ */
 const HomePage = () => {
     const navigate = useNavigate();
     const { userData, loading: userLoading, logout, refreshUserData } = useUser();
     const gardens = userData?.gardens;
-
     const [loading, setLoading] = useState(false);
     const [isGardenModalOpen, setIsGardenModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [hoveredGarden, setHoveredGarden] = useState(null);
 
 
+    /**
+     * Handles the user logout process.
+     * It sets a loading state, calls the logout function from the custom hook,
+     * and navigates to the root URL upon success.
+     */
     const handleLogout = async () => {
         setLoading(true);
         try {
@@ -28,6 +37,7 @@ const HomePage = () => {
         }
     };
 
+    // Functions to manage the state of the Add Garden modal.
     const handleOpenGardenModal = () => {
         setIsGardenModalOpen(true);
     };
@@ -36,6 +46,7 @@ const HomePage = () => {
         setIsGardenModalOpen(false);
     };
 
+    // Functions to manage the state of the User Profile modal.
     const handleOpenProfileModal = () => {
         setIsProfileModalOpen(true);
     };
@@ -44,11 +55,17 @@ const HomePage = () => {
         setIsProfileModalOpen(false);
     };
 
+    /**
+     * Callback function for when a new garden is successfully created.
+     * It refreshes the user data and closes the modal.
+     */
     const handleGardenCreated = async () => {
         await refreshUserData();
         handleCloseGardenModal();
     };
 
+    // Event handlers for mouse enter and leave on a garden card,
+    // which update the hoveredGarden state to show/hide details.
     const handleMouseEnter = (garden) => {
         setHoveredGarden(garden);
     };
@@ -57,10 +74,21 @@ const HomePage = () => {
         setHoveredGarden(null);
     };
 
+    /**
+     * Handles clicking on a garden card, navigating to the specific garden's page.
+     * @param {string} gardenId - The ID of the garden to navigate to.
+     */
     const handleGardenClick = (gardenId) => {
         navigate(`/garden/${gardenId}`);
     };
 
+    /**
+     * Handles the deletion of a garden.
+     * It prevents event propagation, asks for user confirmation,
+     * and calls the API to delete the garden.
+     * @param {object} e - The event object.
+     * @param {string} gardenId - The ID of the garden to delete.
+     */
     const handleDeleteGarden = async (e, gardenId) => {
         e.stopPropagation();
         if (window.confirm('Are you sure you want to delete this garden? This action cannot be undone.')) {
@@ -76,6 +104,7 @@ const HomePage = () => {
         }
     };
 
+    // Displays a loading screen while user data is being fetched.
     if (userLoading) {
         return (
             <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
@@ -113,6 +142,7 @@ const HomePage = () => {
                 <div className="flex-1 flex flex-col space-y-4">
                     <div className="bg-neutral-900 rounded-xl p-4 shadow-lg space-y-2">
                         {gardens && gardens.length > 0 ? (
+                            // Use reverse() to display the most recently created gardens first.
                             [...gardens].reverse().map((garden) => (
                                 <div
                                     key={garden.id}

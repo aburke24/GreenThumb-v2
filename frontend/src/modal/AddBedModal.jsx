@@ -1,34 +1,53 @@
 import React, { useState } from 'react';
 import { createBedApi } from '../utils/bedUtil';
 
+/**
+ * A modal component for adding a new garden bed.
+ *
+ * This modal allows the user to input a name, width, and height for a new bed.
+ * It performs basic validation and calls an API to create the bed.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.isOpen - A boolean indicating whether the modal is open.
+ * @param {Function} props.onClose - Callback function to close the modal.
+ * @param {string} props.userId - The ID of the current user.
+ * @param {object} props.garden - The garden object, containing its dimensions.
+ * @param {Function} props.onSuccess - Callback to execute after a bed is successfully created.
+ */
 const AddBedModal = ({ isOpen, onClose, userId, garden, onSuccess }) => {
+
   const [bedName, setBedName] = useState('');
   const [width, setWidth] = useState(5);
   const [height, setHeight] = useState(5);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const gardenId = garden.id
+
+  const gardenId = garden.id;
+
   if (!isOpen) return null;
 
+  /**
+   * Handles the form submission for creating a new bed.
+   * Performs validation before attempting to create the bed.
+   * @param {object} e - The form event object.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     
-    // Basic validation for name field
     if (!bedName.trim()) {
       setError('Bed name is required');
       return;
     }
     
-    // Get the parent garden's dimensions for validation
     if (!garden) {
         setError('Garden not found.');
         return;
     }
+
     const maxWidth = garden.width;
     const maxHeight = garden.height;
 
-    // Validate bed dimensions
     const bedWidth = Number(width);
     const bedHeight = Number(height);
     
@@ -58,12 +77,13 @@ const AddBedModal = ({ isOpen, onClose, userId, garden, onSuccess }) => {
         left_position: -1,
       });
       
+      // Reset form fields after successful creation
       setBedName('');
       setWidth(5);
       setHeight(5);
  
-      onSuccess(); // Notify parent to refresh beds
-      onClose();   // Close the modal
+      onSuccess(); // Notify parent component of success
+      onClose();   
     } catch (apiError) {
       setError(apiError.message || 'Failed to create bed');
     } finally {

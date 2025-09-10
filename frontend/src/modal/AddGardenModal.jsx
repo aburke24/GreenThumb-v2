@@ -2,32 +2,48 @@ import React, { useState } from 'react';
 import { createGardenApi } from '../utils/gardenUtil';
 import { useUser } from '../hooks/UserUser';
 
+/**
+ * A modal component for adding a new garden.
+ *
+ * This modal handles user input for a new garden's name, width, and height. It performs
+ * validation on the dimensions and uses the user's ID to call the API for creation.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.isOpen - A boolean indicating whether the modal should be displayed.
+ * @param {Function} props.onClose - A callback function to close the modal.
+ * @param {Function} props.onGardenCreated - A callback function to pass the newly created garden data to the parent component.
+ */
 const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
     const { userData } = useUser();
     const [newGardenData, setNewGardenData] = useState({ garden_name: '', width: '', height: '' });
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState('');
 
+    /**
+     * Handles changes to the form input fields and updates the component's state.
+     * @param {object} e - The event object from the input change.
+     */
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewGardenData(prevData => ({ ...prevData, [name]: value }));
     };
 
+    /**
+     * Handles the form submission to create a new garden.
+     * @param {object} e - The event object from the form submission.
+     */
     const handleCreateGarden = async (e) => {
         e.preventDefault();
         setFormError('');
 
-        // Basic validation for empty fields
         if (!newGardenData.garden_name || !newGardenData.width || !newGardenData.height) {
             setFormError('Please fill in all fields.');
             return;
         }
 
-        // Parse numerical values from the input
         const width = Number(newGardenData.width);
         const height = Number(newGardenData.height);
         
-        // Validation for max and negative values
         if (width <= 0 || height <= 0) {
             setFormError('Width and height must be positive numbers.');
             return;
@@ -57,6 +73,7 @@ const AddGardenModal = ({ isOpen, onClose, onGardenCreated }) => {
         }
     };
 
+    // Do not render the modal if `isOpen` is false.
     if (!isOpen) {
         return null;
     }

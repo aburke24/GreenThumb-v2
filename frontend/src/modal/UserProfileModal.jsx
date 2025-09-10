@@ -3,8 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/UserUser';
 import { updateUserApi, deleteUserByEmailApi } from '../utils/userUtil';
 
+/**
+ * A modal component for users to view and edit their profile information.
+ *
+ * This component handles displaying the user's current data, allowing them to
+ * update it, and providing an option to delete their account. It fetches user
+ * data from a custom hook and interacts with an API for profile management.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.isOpen - A boolean indicating whether the modal is open and should be displayed.
+ * @param {Function} props.onClose - A callback function to be called when the modal is requested to close.
+ */
 const UserProfileModal = ({ isOpen, onClose }) => {
-    // Access the comprehensive userData and helper functions from the hook
     const { userData, logout, refreshUserData } = useUser();
     const navigate = useNavigate();
     const user = userData;
@@ -15,24 +25,30 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         city: '',
         state: ''
     });
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-    // Pre-populate form data when the modal opens or user data changes
+    /**
+     * Pre-populates the form data with the current user's information.
+     * This effect runs whenever the modal is opened or the user data changes.
+     */
     useEffect(() => {
-    if (isOpen && user) {
-        
-        setFormData({
-            username: user.username || '',
-            email: user.email || '',
-            city: user.city || '',
-            state: user.state || ''
-        });
-    }
-}, [isOpen, user]);
+        if (isOpen && user) {
+            setFormData({
+                username: user.username || '',
+                email: user.email || '',
+                city: user.city || '',
+                state: user.state || ''
+            });
+        }
+    }, [isOpen, user]);
 
-
-    // Handle form input changes
+    /**
+     * Handles changes to the form input fields.
+     * @param {object} e - The event object from the input change.
+     */
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevData => ({
@@ -41,7 +57,9 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         }));
     };
 
-    // Handle updating the user profile
+    /**
+     * Handles the saving of user profile changes by calling the update API.
+     */
     const handleSave = async () => {
         if (!user || !user.id) {
             setMessage('Error: User not logged in.');
@@ -52,13 +70,12 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         setMessage('');
 
         try {
-            // Send all form data to the update API
             await updateUserApi(user.id, formData);
             setMessage('Profile updated successfully!');
-            await refreshUserData(); // NEW: Refresh all user data
+            await refreshUserData();
             setTimeout(() => {
                 onClose();
-            }, 1500); // Close after a short delay to show the message
+            }, 1500);
         } catch (error) {
             console.error('Error updating profile:', error);
             setMessage(error.message || 'Failed to update profile.');
@@ -67,28 +84,33 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         }
     };
 
-    // Handle deleting the user account
-    const handleDelete = async () => {
+    /**
+     * Handles the account deletion process.
+     * This function first shows a custom confirmation modal before proceeding.
+     */
+    const handleDelete = () => {
+        setShowConfirmModal(true);
+    };
+
+    /**
+     * Confirms the account deletion and calls the API to delete the user.
+     */
+    const confirmDelete = async () => {
         if (!user || !user.email) {
             setMessage('Error: User email not available.');
             return;
         }
 
-        const confirmDelete = window.confirm('Are you sure you want to delete your account? This action is permanent and cannot be undone.');
-        if (!confirmDelete) {
-            return;
-        }
-
         setLoading(true);
         setMessage('');
-
+        setShowConfirmModal(false);
         try {
             await deleteUserByEmailApi(user.email);
             setMessage('Account deleted successfully. Logging out...');
             setTimeout(() => {
-                logout(); // Logs the user out and handles navigation
+                logout(); 
                 navigate('/login');
-            }, 2000); // Wait a bit before logging out
+            }, 2000); 
         } catch (error) {
             console.error('Error deleting account:', error);
             setMessage(error.message || 'Failed to delete account.');
@@ -97,13 +119,16 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         }
     };
 
+    // If the modal is not open, do not render anything.
     if (!isOpen) {
         return null;
     }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+            {/* Main modal content */}
             <div className="bg-neutral-800 text-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4 sm:mx-0">
+                {/* Modal header */}
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold">Edit Profile</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -113,6 +138,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
+                {/* Profile update form */}
                 <div className="space-y-4">
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-400">Username</label>
@@ -148,24 +174,26 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="state" className=" text-whiteblock text-sm font-medium text-gray-400">State</label>
+                        <label htmlFor="state" className="text-whiteblock text-sm font-medium text-gray-400">State</label>
                         <input
                             type="text"
                             id="state"
                             name="state"
                             value={formData.state}
                             onChange={handleChange}
-                            className=" text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className="text-white mt-1 block w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                         />
                     </div>
                 </div>
 
+                {/* Message display area */}
                 {message && (
                     <p className={`mt-4 text-center text-sm ${message.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
                         {message}
                     </p>
                 )}
 
+                {/* Action buttons */}
                 <div className="mt-6 flex justify-between space-x-4">
                     <button
                         onClick={handleSave}
@@ -183,9 +211,33 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Account deletion confirmation modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+                    <div className="bg-neutral-800 text-white p-8 rounded-lg shadow-xl w-full max-w-sm mx-4 text-center">
+                        <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
+                        <p className="mb-6">Are you sure you want to delete your account? This action is permanent and cannot be undone.</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-4 py-2 rounded bg-neutral-700 hover:bg-neutral-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 rounded bg-red-600 hover:bg-red-500"
+                                disabled={loading}
+                            >
+                                {loading ? 'Deleting...' : 'Confirm Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default UserProfileModal;
-

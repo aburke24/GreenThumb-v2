@@ -3,7 +3,6 @@
  * This approach centralizes user data logic, keeping components clean.
  */
 
-// Define the base URL for your API.
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 /**
@@ -14,45 +13,42 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
  */
 async function fetchUserApi(userId) {
     try {
-        // Construct the URL with the userId as a query parameter, matching the curl command.
-        // It's crucial that the environment variable is named VITE_BACKEND_URL in your .env file
-        // and your server is running.
-        
-        const apiUrl = `${import.meta.env.VITE_BACKEND_URL}/user/userId?userId=${userId}`;
+              const apiUrl = `${import.meta.env.VITE_BACKEND_URL}/user/userId?userId=${userId}`;
 
         const response = await fetch(apiUrl, {
-            method: 'GET', // The GET method is the default, but it's good practice to specify it.
+            method: 'GET', 
             headers: {
                 'Content-Type': 'application/json'
             }
         });
 
-        // Check if the response was successful (status code 200-299)
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Failed to fetch user data');
         }
 
         const userData = await response.json();
-        console.log("Fetching the user data ", userData);
         return userData;
 
     } catch (error) {
         console.error('Error fetching user:', error);
-        throw error; // Rethrow the error to be handled by the calling function
+        throw error; 
     }
 }
 
+/**
+ * Fetches user data from the backend by email.
+ * @param {string} email - The user's email.
+ * @returns {Promise<object>} The user's data.
+ */
 const fetchUserByEmailApi = async (email) => {
   try {
-    // We use encodeURIComponent to properly format the email for a URL query parameter.
     const response = await fetch(`${API_URL}/user/email?email=${encodeURIComponent(email)}`);
 
     const contentType = response.headers.get("content-type");
     
     if (!response.ok) {
       let errorMessage = 'Failed to fetch user data by email.';
-
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
@@ -80,7 +76,7 @@ const fetchUserByEmailApi = async (email) => {
  * Updates a user's information.
  * @param {string} userId - The ID of the user to update.
  * @param {object} newData - An object containing the data to update (e.g., { username: 'New Name' }).
- * @returns {Promise<object>} The updated user object from the server.
+ * @returns {Promise<object>} A promise that resolves with the updated user object from the server.
  */
 export async function updateUserApi(userId, newData) {
   try {

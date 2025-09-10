@@ -5,7 +5,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
 import GardenPage from './pages/GardenPage';
-import EditBedPage from './pages/EditBedPage'; // Import the new GardenPage
+import EditBedPage from './pages/EditBedPage';
 
 /**
  * The main application component.
@@ -13,7 +13,6 @@ import EditBedPage from './pages/EditBedPage'; // Import the new GardenPage
  */
 const App = () => {
   return (
-    // UserProvider must wrap the entire router to make context available
     <UserProvider>
       <BrowserRouter>
         <Routes>

@@ -1,6 +1,24 @@
 import React from 'react';
 import UnplacedBedCard from '../component/UnplacedBedCard';
 
+/**
+ * BedsPanel component displays a collapsible panel of garden beds.
+ * It supports toggling between placed and unplaced beds, resizing via drag,
+ * and managing individual bed cards (edit, delete, select).
+ *
+ * @param {Array} gardenBeds - Array of bed objects.
+ * @param {boolean} showUnplacedBeds - Whether to show only unplaced beds.
+ * @param {Function} setShowUnplacedBeds - Setter to toggle placed/unplaced view.
+ * @param {boolean} isBedsOpen - Whether the panel is expanded.
+ * @param {Function} toggleBeds - Toggles the panel open or collapsed.
+ * @param {number} bedPanelHeight - Current height of the panel (in pixels).
+ * @param {object} isDragging - React ref to determine if panel is being resized.
+ * @param {Function} handleMouseDown - Handles drag to resize panel.
+ * @param {string} selectedBedId - ID of the currently selected bed.
+ * @param {Function} handleCardClick - Callback for clicking on a bed card.
+ * @param {Function} handleDeleteBed - Callback to delete a bed.
+ * @param {Function} handleEditBed - Callback to edit a bed.
+ */
 const BedsPanel = ({
   gardenBeds,
   showUnplacedBeds,
@@ -15,8 +33,11 @@ const BedsPanel = ({
   handleDeleteBed,
   handleEditBed,
 }) => {
-  console.log("The Garden beds are ", gardenBeds);
-  // Determine which beds to display based on the showUnplacedBeds state
+  
+  /**
+   * Filters gardenBeds based on placement status.
+   * Shows either placed or unplaced beds depending on showUnplacedBeds.
+   */
   const bedsToDisplay = gardenBeds.filter((bed) =>
     showUnplacedBeds
       ? bed.left_position === -1 && bed.top_position === -1
@@ -28,7 +49,7 @@ const BedsPanel = ({
       className="bg-neutral-900 border-t border-neutral-700 shadow-inner relative"
       style={{ height: bedPanelHeight, transition: isDragging.current ? 'none' : 'height 0.3s' }}
     >
-      {/* Drag handle */}
+      {/* ─── Drag Handle: Resizes the panel height ───────────────────────────── */}
       <div
         onMouseDown={handleMouseDown}
         className="h-4 cursor-ns-resize bg-neutral-800 flex items-center justify-center select-none"
@@ -37,9 +58,9 @@ const BedsPanel = ({
         <div className="w-10 h-1 rounded-full bg-neutral-600"></div>
       </div>
 
-      {/* Buttons and collapse toggle */}
+      {/* ─── Header: Collapse Toggle and Bed Type Switch ────────────────────── */}
       <div className="flex items-center w-full p-4 sm:p-6 space-x-4">
-        {/* Collapse toggle button on the left */}
+        {/* Collapse toggle button (arrow icon) */}
         <button
           onClick={toggleBeds}
           className="flex items-center justify-center text-white cursor-pointer select-none"
@@ -61,7 +82,7 @@ const BedsPanel = ({
           </svg>
         </button>
 
-        {/* Placed/Unplaced toggle buttons */}
+        {/* Toggle between placed and unplaced beds */}
         <div className="flex space-x-4">
           <button
             onClick={() => setShowUnplacedBeds(false)}
@@ -82,7 +103,7 @@ const BedsPanel = ({
         </div>
       </div>
 
-      {/* Bed cards container */}
+      {/* ─── Bed Cards Display Area ─────────────────────────────────────────── */}
       <div
         className="px-4 sm:px-6 pb-4 sm:pb-6 overflow-y-auto"
         style={{ height: `calc(${bedPanelHeight}px - 60px)` }}

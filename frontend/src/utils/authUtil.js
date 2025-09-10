@@ -1,11 +1,12 @@
-// src/utils/auth.js
-
 const API_URL = import.meta.env.VITE_BACKEND_URL;
+
 /**
  * Utility function to handle the login API call.
+ * It sends a POST request to the backend with the user's email and password.
  * @param {string} email - The user's email.
  * @param {string} password - The user's password.
  * @returns {Promise<object>} - A promise that resolves with the login response data.
+ * @throws {Error} - Throws an error if the API call fails or the server returns an error.
  */
 const loginApi = async (email, password) => {
   try {
@@ -21,7 +22,6 @@ const loginApi = async (email, password) => {
 
     if (!response.ok) {
       let errorMessage = 'Login failed';
-
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
@@ -48,15 +48,15 @@ const loginApi = async (email, password) => {
 
 /**
  * Utility function to handle the registration API call.
+ * It sends a POST request to the backend to create a new user.
  * @param {string} username - The user's desired username.
  * @param {string} email - The user's email.
  * @param {string} password - The user's password.
  * @returns {Promise<object>} - A promise that resolves with the registration response data.
+ * @throws {Error} - Throws an error if the API call fails or the server returns an error.
  */
 const registerApi = async (username, email, password) => {
   try {
-    console.log("made it");
-    console.log(API_URL);
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
