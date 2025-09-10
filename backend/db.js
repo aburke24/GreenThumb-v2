@@ -2,8 +2,7 @@
  * @file db.js
  * @description Establishes and exports the PostgreSQL database connection pool.
  *
- * This file is a central point for all database interactions to avoid
- * circular dependencies and ensure a single connection instance is used.
+ * This file is a central point for all database interactions.
  */
 
 const { Pool } = require('pg');
@@ -17,6 +16,12 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false, 
   },
+});
+
+// Add an event listener to the pool for error logging
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
 });
 
 module.exports = {

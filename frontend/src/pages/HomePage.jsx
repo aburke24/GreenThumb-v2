@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/UserUser';
 import AddGardenModal from '../modal/AddGardenModal';
@@ -8,7 +8,6 @@ import { deleteGardenApi } from '../utils/gardenUtil';
 const HomePage = () => {
     const navigate = useNavigate();
     const { userData, loading: userLoading, logout, refreshUserData } = useUser();
-    const user = userData?.user;
     const gardens = userData?.gardens;
 
     const [loading, setLoading] = useState(false);
