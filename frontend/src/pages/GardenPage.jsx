@@ -9,6 +9,16 @@ import GardenView from '../component/GardenView';
 import BedsPanel from '../component/BedsPanel';
 import { updatePlantsApi } from '../utils/plantsUtil';
 
+/**
+ * A component for viewing and managing a specific garden.
+ *
+ * This page allows users to:
+ * - View a visual representation of their garden and its beds.
+ * - Edit the garden's name and dimensions.
+ * - Place, unplace, and reposition beds on the garden grid.
+ * - Add new beds and edit existing ones.
+ * - Save or cancel changes.
+ */
 const GardenPage = () => {
     const { gardenId } = useParams();
     const navigate = useNavigate();
@@ -25,7 +35,6 @@ const GardenPage = () => {
     const [isBedsOpen, setIsBedsOpen] = useState(true);
     const [bedPanelHeight, setBedPanelHeight] = useState(300);
     const [gardenBeds, setGardenBeds] = useState([]);
-
     const [isHeaderOpen, setIsHeaderOpen] = useState(false);
     const [selectedBedId, setSelectedBedId] = useState(null);
     const [showUnplacedBeds, setShowUnplacedBeds] = useState(true);
@@ -34,6 +43,16 @@ const GardenPage = () => {
     const isDragging = useRef(false);
     const userId = userData?.id;
 
+    // UI state handlers.
+    const openAddBedModal = () => setIsAddBedOpen(true);
+    const closeAddBedModal = () => setIsAddBedOpen(false);
+    const toggleBeds = () => setIsBedsOpen(prev => !prev);
+    const toggleHeader = () => setIsHeaderOpen(prev => !prev);
+
+    /**
+     * Effect to fetch and populate the garden data from the user's context.
+     * This runs on initial load and when the user data is updated.
+     */
     useEffect(() => {
         if (!loading && userData && userData.gardens) {
             const foundGarden = userData.gardens.find(g => g.id == gardenId);
@@ -47,11 +66,14 @@ const GardenPage = () => {
                 setGardenBeds(foundGarden.beds);
             } else {
                 console.error("Garden not found");
-                // Navigate away or show an error state
+                // Navigate away or show an error state?
             }
         }
     }, [gardenId, loading, userData, navigate]);
 
+    /**
+     * Effect to control the beds panel height based on its open/closed state.
+     */
     useEffect(() => {
         if (isBedsOpen) {
             setBedPanelHeight(300);
@@ -60,6 +82,9 @@ const GardenPage = () => {
         }
     }, [isBedsOpen]);
 
+    /**
+     * Handles navigating back. Confirms with the user if there are unsaved changes.
+     */
     const handleBack = () => {
         const hasHeaderChanges = hasUnsavedChanges;
         const hasUnsavedBedPositions = Object.keys(unsavedPositions).length > 0;
@@ -73,14 +98,20 @@ const GardenPage = () => {
         navigate(-1);
     };
 
-    const openAddBedModal = () => setIsAddBedOpen(true);
-    const closeAddBedModal = () => setIsAddBedOpen(false);
-    const toggleBeds = () => setIsBedsOpen(prev => !prev);
-    const toggleHeader = () => setIsHeaderOpen(prev => !prev);
+    /**
+     * Callback function for when a new bed is successfully added.
+     * It refreshes the user data to show the new bed.
+     */
     const handleBedAdded = () => {
         refreshUserData();
     };
 
+    /**
+     * Checks if there are unsaved changes to the garden's name or dimensions.
+     * @param {string} name - The new garden name.
+     * @param {string} width - The new garden width.
+     * @param {string} height - The new garden height.
+     */
     const checkForChanges = (name, width, height) => {
         if (!garden) return;
         const changed =
@@ -90,6 +121,9 @@ const GardenPage = () => {
         setHasUnsavedChanges(changed);
     };
 
+    /**
+     * Handlers for input changes, which also check for unsaved changes.
+     */
     const handleNameChange = (e) => {
         const newName = e.target.value;
         setGardenName(newName);
@@ -108,6 +142,9 @@ const GardenPage = () => {
         checkForChanges(gardenName, gardenWidth, newHeight);
     };
 
+    /**
+     * Handles saving changes to both the garden header and the bed positions.
+     */
     const handleSave = async () => {
         if (!garden || !userId || !gardenId) return;
         const newData = {
@@ -116,7 +153,9 @@ const GardenPage = () => {
             height: parseFloat(gardenHeight),
         };
         try {
+            // First, update the garden header.
             await updateGardenApi(userId, gardenId, newData);
+            // Then, update the positions of all beds with unsaved changes.
             const updatePromises = Object.entries(unsavedPositions).map(([bedId, bedData]) => {
                 const originalBed = gardenBeds.find(b => b.id == bedId);
                 if (!originalBed) return null;
@@ -130,17 +169,21 @@ const GardenPage = () => {
                 return updateBedApi(userId, gardenId, bedId, updatedBed);
             }).filter(Boolean);
             await Promise.all(updatePromises);
+            // Reset state after successful save.
             setUnsavedPositions({});
             setSelectedBedId(null);
             setHasUnsavedChanges(false);
             setDisplayWidth(newData.width * 10);
             setDisplayHeight(newData.height * 10);
-            await refreshUserData();
+            await refreshUserData(); // Refresh data to reflect all changes.
         } catch (error) {
             console.error('Error saving garden and beds:', error);
         }
     };
 
+    /**
+     * Handles cancelling changes to the garden header by reverting to the last saved state.
+     */
     const handleCancelChanges = () => {
         if (garden) {
             setGardenName(garden.garden_name);
@@ -150,6 +193,10 @@ const GardenPage = () => {
         setHasUnsavedChanges(false);
     };
 
+    /**
+     * Handles deleting a bed after user confirmation.
+     * @param {string} bedId - The ID of the bed to delete.
+     */
     const handleDeleteBed = async (bedId) => {
         if (!userId || !gardenId || !bedId) {
             console.error('Missing required parameters for bed deletion.');
@@ -165,11 +212,16 @@ const GardenPage = () => {
         }
     };
 
+    /**
+     * Navigates to the bed editing page.
+     * @param {object} bed - The bed object to edit.
+     */
     const handleEditBed = (bed) => {
         refreshUserData();
         navigate(`/garden/${gardenId}/bed/${bed.id}`);
     };
 
+    // Mouse event handlers for resizing the beds panel.
     const handleMouseDown = () => {
         isDragging.current = true;
         document.body.style.cursor = 'ns-resize';
@@ -188,6 +240,9 @@ const GardenPage = () => {
         if (!isBedsOpen) setIsBedsOpen(true);
     };
 
+    /**
+     * Effect to add and clean up global mouse event listeners for panel resizing.
+     */
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
@@ -197,6 +252,7 @@ const GardenPage = () => {
         };
     }, []);
 
+    // Display a loading screen while data is being fetched.
     if (loading || !garden) {
         return (
             <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
@@ -205,13 +261,16 @@ const GardenPage = () => {
         );
     }
     
-    // ... rest of your component
+    /**
+     * Handles the click event on a bed card in the beds panel.
+     * It toggles the selection state of the bed for placement on the grid.
+     * @param {object} bed - The bed object that was clicked.
+     */
     const handleCardClick = (bed) => {
         if (selectedBedId === bed.id) {
             setSelectedBedId(null);
             setUnsavedPositions({});
         } else {
-            console.log("BED ID IS ", bed.id);
             setSelectedBedId(bed.id);
             setUnsavedPositions({
                 [bed.id]: {
@@ -224,11 +283,15 @@ const GardenPage = () => {
         }
     };
 
+    /**
+     * Handles clicking on the garden grid to place a selected bed.
+     * @param {object} coords - An object containing the row and column of the clicked cell.
+     */
     const onGardenClick = ({ row, col }) => {
-        console.log("The beds position is being updated", selectedBedId, row, col);
         if (!selectedBedId) return;
         const bed = gardenBeds.find((b) => b.id === selectedBedId);
         if (!bed) return;
+        // Check if the bed fits at the new position within the garden boundaries.
         const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
         const bedWidth = unsavedPositions[selectedBedId]?.width || bed.width;
         const bedHeight = unsavedPositions[selectedBedId]?.height || bed.height;
@@ -239,6 +302,7 @@ const GardenPage = () => {
             col + bedWidth <= parseInt(gardenWidth)
         ) {
             if (isUnplaced || bed.top_position !== row || bed.left_position !== col) {
+                // Update the unsaved positions state with the new coordinates.
                 setUnsavedPositions((prev) => ({
                     ...prev,
                     [selectedBedId]: {
@@ -255,6 +319,11 @@ const GardenPage = () => {
         }
     };
 
+    /**
+     * Confirms the placement of a bed by saving its new position to the database.
+     * @param {string} bedId - The ID of the bed to place.
+     * @param {object} newBedData - The new position and dimensions.
+     */
     const onConfirmPlacement = async (bedId, newBedData) => {
         try {
             await updateBedApi(userId, gardenId, bedId, {
@@ -277,6 +346,10 @@ const GardenPage = () => {
         }
     };
 
+    /**
+     * Unplaces a bed by setting its position to a default, unplaced state.
+     * @param {object} bed - The bed to unplace.
+     */
     const onUnplaceBed = async (bed) => {
         if (!userId || !gardenId || !bed.id) {
             console.error('Missing required parameters for unplacing bed.');
@@ -296,6 +369,10 @@ const GardenPage = () => {
         }
     };
 
+    /**
+     * Cancels the placement of a bed and reverts its position.
+     * @param {string} bedId - The ID of the bed to cancel placement for.
+     */
     const onCancelPlacement = (bedId) => {
         setUnsavedPositions(prev => {
             const updated = { ...prev };
@@ -322,6 +399,7 @@ const GardenPage = () => {
                             placeholder="Garden Name"
                         />
                     </div>
+                    {/* Header toggle button for mobile */}
                     <button onClick={toggleHeader} className="sm:hidden p-2 rounded-full hover:bg-neutral-700">
                         {isHeaderOpen ? (
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -334,6 +412,7 @@ const GardenPage = () => {
                         )}
                     </button>
                 </div>
+                {/* Header controls (dimensions, save/cancel) */}
                 <div className={`${isHeaderOpen ? 'flex' : 'hidden'} flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm font-medium w-full sm:w-auto sm:flex`}>
                     <label className="flex items-center space-x-2 w-full sm:w-auto">
                         <Ruler className="w-5 h-5 text-gray-400" />

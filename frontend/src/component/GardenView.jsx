@@ -1,8 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, Ban } from 'lucide-react';
 import BedComponent from './BedView';
-import { useUser } from '../hooks/UserUser';
 
+/**
+ * @typedef {object} Bed
+ * @property {string} id - The unique identifier of the bed.
+ * @property {number} top_position - The row position of the top-left corner of the bed. -1 if unplaced.
+ * @property {number} left_position - The column position of the top-left corner of the bed. -1 if unplaced.
+ * @property {number} width - The width of the bed in grid cells.
+ * @property {number} height - The height of the bed in grid cells.
+ * @property {Array} plants - The plants contained within the bed.
+ */
+
+/**
+ * Renders the main garden grid and handles the placement, resizing, and selection of garden beds.
+ *
+ * This component is responsible for the visual representation of the garden and for managing the
+ * user's interaction with the grid and the beds placed on it. It dynamically adjusts cell sizes
+ * to fit the screen and provides visual feedback for hovering and placement.
+ *
+ * @param {object} props - The component props.
+ * @param {string} props.gardenId - The ID of the current garden.
+ * @param {number} props.gardenWidth - The total width of the garden grid in cells.
+ * @param {number} props.gardenHeight - The total height of the garden grid in cells.
+ * @param {Bed[]} props.beds - An array of bed objects to display in the garden.
+ * @param {string|null} props.selectedBedId - The ID of the currently selected bed, or null.
+ * @param {Function} props.onSelectBed - Callback fired when a bed is selected.
+ * @param {object} props.unsavedPositions - A map of bed IDs to their temporary, unsaved positions and dimensions.
+ * @param {Function} props.onConfirmPlacement - Callback to confirm a bed's placement.
+ * @param {Function} props.onCancelPlacement - Callback to cancel a bed's placement.
+ * @param {Function} props.onGardenClick - Callback fired when the user clicks on an empty spot in the garden.
+ * @param {Function} props.setSelectedBedId - State setter for the selected bed ID.
+ * @param {Function} props.setUnsavedPositions - State setter for unsaved positions.
+ * @param {Function} props.onEditBed - Callback to handle editing a bed's details.
+ * @param {Function} props.onUnplaceBed - Callback to handle unplacing a bed.
+ */
 const GardenView = ({
     gardenId,
     gardenWidth,
@@ -19,6 +51,7 @@ const GardenView = ({
     onEditBed,
     onUnplaceBed
 }) => {
+    // Ref to the main container element for measuring its dimensions.
     const containerRef = useRef(null);
     const [cellSize, setCellSize] = useState(10);
     const [hoverCell, setHoverCell] = useState(null);
@@ -28,6 +61,10 @@ const GardenView = ({
     const hoverBedWidth = unsavedPositions[selectedBedId]?.width || selectedBed?.width || 1;
     const hoverBedHeight = unsavedPositions[selectedBedId]?.height || selectedBed?.height || 1;
 
+    /**
+     * Effect to fetch and map plants for each bed.
+     * Runs whenever the `beds` array or `gardenId` changes.
+     */
     useEffect(() => {
         const fetchPlantsForBeds = () => {
             const plantMap = {};
@@ -35,7 +72,6 @@ const GardenView = ({
                 const plants = bed.plants;
                 plantMap[bed.id] = plants;
             });
-            console.log("The bed plants are ", plantMap);
             setBedPlants(plantMap);
         };
 
@@ -44,6 +80,11 @@ const GardenView = ({
         }
     }, [gardenId, beds]);
 
+    /**
+     * Effect to dynamically update the cell size based on the container's dimensions.
+     * This ensures the grid is always responsive and fits the available space.
+     * It also attaches a resize listener to handle window size changes.
+     */
     useEffect(() => {
         const updateCellSize = () => {
             if (!containerRef.current) return;
@@ -63,11 +104,17 @@ const GardenView = ({
         return () => window.removeEventListener('resize', updateCellSize);
     }, [gardenWidth, gardenHeight]);
 
+    /**
+     * Handles the resizing of a bed.
+     * @param {object} newBedData - The new dimensions and position of the bed being resized.
+     * @param {string} newBedData.id - The ID of the bed.
+     * @param {number} newBedData.newWidth - The new width in cells.
+     * @param {number} newBedData.newHeight - The new height in cells.
+     * @param {number} newBedData.newTop - The new top position in cells.
+     * @param {number} newBedData.newLeft - The new left position in cells.
+     */
     const handleResize = ({ id, newWidth, newHeight, newTop, newLeft }) => {
-        // Remove plants that don't fit inside newWidth x newHeight bed
-
-
-        // Update unsaved positions as before
+        // Update unsaved positions with new dimensions
         setUnsavedPositions((prev) => ({
             ...prev,
             [id]: {
@@ -80,7 +127,10 @@ const GardenView = ({
         }));
     };
 
-
+    /**
+     * Handles mouse movement over the garden grid.
+     * @param {object} e - The mouse event object.
+     */
     const handleMouseMove = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
@@ -88,7 +138,8 @@ const GardenView = ({
         const hoveredCol = Math.floor(offsetX / cellSize);
         const hoveredRow = Math.floor(offsetY / cellSize);
 
-        if (selectedBed && hoveredCol >= 0 && hoveredRow >= 0) {
+        // Check if a bed is selected and the hover is within the grid boundaries.
+        if (selectedBedId && hoveredCol >= 0 && hoveredRow >= 0) {
             const fits =
                 hoveredCol + hoverBedWidth <= gardenWidth &&
                 hoveredRow + hoverBedHeight <= gardenHeight;
@@ -103,6 +154,9 @@ const GardenView = ({
         }
     };
 
+    /**
+     * Clears the hover cell state when the mouse leaves the garden grid.
+     */
     const handleMouseLeave = () => {
         setHoverCell(null);
     };
@@ -147,10 +201,12 @@ const GardenView = ({
                     {gardenWidth} x {gardenHeight}
                 </p>
 
+                {/* Render the background grid cells */}
                 {Array.from({ length: gardenWidth * gardenHeight }).map((_, index) => (
                     <div key={index} className="bg-[#4E342E]"></div>
                 ))}
 
+                {/* Render the hover preview for bed placement */}
                 {hoverCell && (
                     <div
                         className={`absolute pointer-events-none rounded-sm border ${hoverCell.fits ? 'bg-emerald-400/40 border-emerald-500' : 'bg-red-400/40 border-red-500'}`}
@@ -164,6 +220,7 @@ const GardenView = ({
                     />
                 )}
 
+                {/* Render all the garden beds */}
                 {beds.filter(bed => {
                     const isUnplaced = bed.top_position === -1 && bed.left_position === -1;
                     const isBeingPlaced = selectedBedId === bed.id;
@@ -179,6 +236,8 @@ const GardenView = ({
 
                     const isSelected = selectedBedId === bed.id;
 
+                    // If a bed is selected and unplaced, don't render it here.
+                    // It will be rendered by the hover effect instead.
                     if (isSelected && top_position === -1 && left_position === -1) {
                         return null;
                     }
@@ -220,6 +279,7 @@ const GardenView = ({
                                 onResize={(newBedData) => handleResize(newBedData)} cellSize={cellSize}
                           
                             />
+                            {/* Render edit and unplace buttons for selected beds */}
                             {isSelected && !isUnsaved && (
                                 <div className="absolute bottom-[-2.5rem] left-1/2 -translate-x-1/2 flex gap-1 z-30">
                                     <button

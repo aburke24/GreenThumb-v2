@@ -17,7 +17,15 @@ import { updatePlantsApi } from '../utils/plantsUtil';
 import { v4 as uuidv4 } from 'uuid';
 import PlantCatalogModal from '../modal/PlantCatalogModal';
 
-// Helper function to get plant dimensions based on spacing
+/**
+ * Helper function to determine a plant's grid dimensions based on its spacing value.
+ *
+ * This function translates a single-integer spacing value (e.g., 9 for 3x3) into
+ * a width and height for the grid.
+ *
+ * @param {number|string} spacing - The spacing value from the plant catalog.
+ * @returns {{width: number, height: number}} The width and height of the plant on the grid.
+ */
 const getPlantDimensions = (spacing) => {
     const s = parseInt(spacing);
     if (s === 1) return { width: 1, height: 1 };
@@ -26,9 +34,18 @@ const getPlantDimensions = (spacing) => {
     return { width: 1, height: 1 };
 };
 
+/**
+ * A page component for editing a specific garden bed.
+ *
+ * This page allows users to:
+ * - Edit the bed's name, width, and height.
+ * - Place, move, and remove plants on a grid.
+ * - Save and discard changes to both the bed's header and the plant layout.
+ *
+ * @param {object} props - The component props.
+ */
 const EditBedPage = () => {
     const { gardenId, bedId } = useParams();
-    // Access the comprehensive userData and helper functions from the hook
     const { userData, loading, refreshUserData } = useUser();
 
     const navigate = useNavigate();
@@ -56,8 +73,10 @@ const EditBedPage = () => {
     const [editingButtonIndex, setEditingButtonIndex] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
 
-
-    // Use ResizeObserver to get the available dimensions for the bed grid
+    /**
+     * Effect to dynamically update the bed container's dimensions using a ResizeObserver.
+     * This ensures the bed grid scales correctly with the window size.
+     */
     useEffect(() => {
         if (!bedContainerRef.current) return;
 
@@ -70,18 +89,21 @@ const EditBedPage = () => {
         return () => resizeObserver.disconnect();
     }, []);
 
+    /**
+     * Effect to set the initial active plant buttons once the full plant catalog is loaded.
+     */
     useEffect(() => {
         if (allPlants && allPlants.length > 0) {
-            console.log("all of the plants", allPlants);
             setActivePlantButtons(allPlants.slice(0, 6));
         }
     }, [allPlants]);
 
-    // Populate local state with bed and plants data from the context
+    /**
+     * Effect to populate the local state with bed and plant data fetched from the context.
+     * This runs on initial load and whenever the user's data is refreshed.
+     */
     useEffect(() => {
         if (userData) {
-            console.log("UserData", userData);
-            console.log("The gardenId is", gardenId);
             const foundGarden = userData.gardens.find(garden => garden.id == gardenId);
             setGarden(foundGarden);
 
@@ -122,6 +144,9 @@ const EditBedPage = () => {
         }
     }, [userData, setGarden, gardenId, bedId]);
 
+    /**
+     * Effect to detect if the user is on a mobile device to adjust UI layout.
+     */
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 640);
@@ -131,12 +156,21 @@ const EditBedPage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    /**
+     * Effect to load the plant catalog from the JSON file.
+     */
     useEffect(() => {
         if (PlantCatalog && Array.isArray(PlantCatalog)) {
             setAllPlants(PlantCatalog.slice(0, 5));
         }
     }, []);
 
+    /**
+     * Checks if there are any unsaved changes to the bed's header fields.
+     * @param {string} name - The new bed name.
+     * @param {number} w - The new bed width.
+     * @param {number} h - The new bed height.
+     */
     const checkForHeaderChanges = (name, w, h) => {
         const changed =
             name !== originalHeader.name ||
@@ -146,6 +180,9 @@ const EditBedPage = () => {
         setHasUnsavedHeader(changed);
     };
 
+    /**
+     * Handlers for input changes. They update the state and check for unsaved changes.
+     */
     const handleNameChange = (e) => {
         const val = e.target.value;
         setBedName(val);
@@ -174,6 +211,9 @@ const EditBedPage = () => {
         checkForHeaderChanges(bedName, width, newHeight);
     };
 
+    /**
+     * Handles navigating back. Confirms with the user if there are unsaved changes.
+     */
     const handleBack = () => {
         if (hasUnsavedHeader || hasUnsavedPlants) {
             const confirmed = window.confirm("You have unsaved changes. Are you sure you want to leave?");
@@ -181,10 +221,14 @@ const EditBedPage = () => {
                 return;
             }
         }
-        refreshUserData(); // Single refresh call on exit
+        refreshUserData();
         navigate(-1);
     };
 
+    /**
+     * Handles saving changes to the bed's name and dimensions.
+     * It also filters and updates the plant layout if the bed's size has changed.
+     */
     const handleSaveHeader = async () => {
         if (!garden || width > garden.width || height > garden.height) {
             alert("Bed dimensions cannot be larger than the garden's dimensions. Please adjust the width and height.");
@@ -239,8 +283,9 @@ const EditBedPage = () => {
         }
     };
 
-
-
+    /**
+     * Cancels any unsaved changes to the bed's header by reverting to the original data.
+     */
     const handleCancelHeaderChanges = () => {
         const originalBed = garden.beds?.find(b => b.id === bedId);
         if (originalBed) {
@@ -252,18 +297,25 @@ const EditBedPage = () => {
         setHasUnsavedHeader(false);
     };
 
+    /**
+     * Handles saving the current plant layout to the database.
+     */
     const handleSavePlants = async () => {
 
         try {
             await updatePlantsApi(userData.id, gardenId, bedId, plantsInBed);
             setHasUnsavedPlants(false);
-            await refreshUserData(); // Refresh all data from the API after saving
+            await refreshUserData();
         } catch (error) {
             console.error('Failed to save plants:', error);
             setHasUnsavedPlants(true);
         }
     };
 
+    /**
+     * Handles selecting a new plant from the catalog to replace a plant button.
+     * @param {object} plant - The plant object selected from the catalog.
+     */
     const handleChoosePlantForButton = (plant) => {
         if (editingButtonIndex !== null) {
             const updatedButtons = [...activePlantButtons];
@@ -275,6 +327,9 @@ const EditBedPage = () => {
         }
     };
 
+    /**
+     * Cancels any unsaved plant layout changes by reverting to the last saved state.
+     */
     const handleCancelPlantChanges = () => {
         const originalPlants = bed.plants;
 
@@ -284,7 +339,7 @@ const EditBedPage = () => {
         originalPlants.forEach(plant => {
             const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
             for (let r = plant.y_position; r < plant.y_position + plantH; r++) {
-                for (let c = plant.x_position; c < plant.x_position + plantW; c++) {
+                for (let c = plant.x_position; c < c.x_position + plantW; c++) {
                     if (newLayout[r] && newLayout[r][c] !== undefined) {
                         newLayout[r][c] = plant;
                     }
@@ -296,6 +351,9 @@ const EditBedPage = () => {
         setHasUnsavedPlants(false);
     };
 
+    /**
+     * Clears all plants from the bed after user confirmation.
+     */
     const handleClearBed = () => {
         const confirmed = window.confirm("Are you sure you want to clear all plants from this bed? This action cannot be undone.");
         if (confirmed) {
@@ -305,24 +363,43 @@ const EditBedPage = () => {
         }
     };
 
+    /**
+     * Handles navigating back from the plant list view to the main actions view.
+     */
     const handlePlantListBack = () => {
         setShowPlantList(false);
         setActivePlant(null);
     };
 
+    /**
+     * Handles opening the plant list view.
+     */
     const handleOpenAddPlant = () => {
         setShowPlantList(true);
     };
 
+    /**
+     * Handles hovering over a grid cell to update the hovered cell state.
+     * @param {object} coords - The coordinates of the hovered cell.
+     */
     const handleCellHover = (coords) => {
         setHoveredCell(coords);
     };
 
+    /**
+     * Handles leaving a grid cell.
+     */
     const handleCellLeave = () => {
         setHoveredCell(null);
     };
 
+    /**
+     * Handles clicking on a grid cell to place or delete a plant.
+     * @param {number} row - The row index of the clicked cell.
+     * @param {number} col - The column index of the clicked cell.
+     */
     const handleGridClick = (row, col) => {
+        // If in delete mode, remove the plant.
         if (isDeleteMode) {
             const plantToDelete = bedLayout[row][col];
             if (plantToDelete) {
@@ -381,6 +458,7 @@ const EditBedPage = () => {
         setHasUnsavedPlants(true);
     };
 
+    // Show a loading screen while data is being fetched.
     if (loading || !userData || !garden) {
         return (
             <div className="flex items-center justify-center h-screen w-screen bg-neutral-800 text-white">
@@ -391,8 +469,7 @@ const EditBedPage = () => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-neutral-800 text-white font-sans antialiased overflow-hidden">
-            {/* ... (rest of the component, which is unchanged) ... */}
-            {/* HEADER */}
+            {/* HEADER SECTION */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-neutral-900 border-b border-neutral-700">
                 <div className="flex items-center justify-between w-full sm:w-auto mb-4 sm:mb-0">
                     <div className="flex items-center space-x-2 sm:space-x-4">
@@ -407,6 +484,7 @@ const EditBedPage = () => {
                             className="w-40 sm:w-48 px-3 py-2 bg-neutral-700 text-white rounded-lg"
                         />
                     </div>
+                    {/* Toggle button for header on mobile */}
                     <button
                         onClick={() => setIsHeaderOpen((prev) => !prev)}
                         className="sm:hidden p-2 rounded-full hover:bg-neutral-700"
@@ -416,6 +494,7 @@ const EditBedPage = () => {
                     </button>
                 </div>
 
+                {/* Header controls (name, dimensions, save/cancel) */}
                 <div
                     className={`${isHeaderOpen ? 'flex' : 'hidden'} flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm font-medium w-full sm:w-auto sm:flex`}
                 >
@@ -463,8 +542,9 @@ const EditBedPage = () => {
                 </div>
             </div>
 
-            {/* MAIN CONTENT */}
+            {/* MAIN CONTENT AREA */}
             <div className="flex flex-1 flex-col sm:flex-row p-6 pb-16 sm:pb-6 gap-6 relative">
+                {/* Bed Editor component */}
                 <div ref={bedContainerRef} className="flex-1 flex justify-center items-center rounded-xl p-4">
                     <Bed
                         width={width}
@@ -484,110 +564,119 @@ const EditBedPage = () => {
                 
                 </div>
 
-                {/* RIGHT: Action Sidebar */}
+                {/* RIGHT: Action Sidebar / Mobile Action Bar */}
                 <div className="fixed bottom-0 left-0 w-full bg-neutral-900 border-t border-neutral-700 p-4 pb-6 transition-transform duration-300 ease-in-out z-50 sm:relative sm:w-auto sm:flex-none sm:bg-transparent sm:border-none sm:p-0 sm:translate-y-0">
                     <div className="flex flex-row justify-center space-x-4 sm:flex-col sm:space-x-0 sm:space-y-4 sm:bg-neutral-700 sm:rounded-xl sm:p-4">
+                        {/* Conditional rendering based on whether the user is in the plant list view */}
                         {!showPlantList ? (
                             <>
-                                {/* Save Plants */}
+                                {/* Save Plants Button */}
                                 <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={() => {
-                                        setIsDeleteMode(false);
-                                        handleSavePlants();
-                                    }}
-                                    disabled={!hasUnsavedPlants}
-                                    className={`group rounded-full p-3 flex items-center justify-center relative transition
-        ${hasUnsavedPlants
-                                            ? 'bg-yellow-500 hover:bg-yellow-400'
-                                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                    aria-label="Save bed changes"
-                                >
-                                    <Save className="w-6 h-6 text-white" />
-                                    <Tooltip text="Save Plant Changes" />
-                                </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsDeleteMode(false);
+                                            handleSavePlants();
+                                        }}
+                                        disabled={!hasUnsavedPlants}
+                                        className={`group rounded-full p-3 flex items-center justify-center relative transition
+                                            ${hasUnsavedPlants
+                                                ? 'bg-yellow-500 hover:bg-yellow-400'
+                                                : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                        aria-label="Save bed changes"
+                                    >
+                                        <Save className="w-6 h-6 text-white" />
+                                        <Tooltip text="Save Plant Changes" />
+                                    </button>
                                     <span className="text-xs text-white">Save Plants</span>
                                 </div>
 
-                                {/* Cancel Plants */}
-                                 <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={handleCancelPlantChanges}
-                                    disabled={!hasUnsavedPlants}
-                                    className={`group rounded-full p-3 flex items-center justify-center relative transition
-        ${hasUnsavedPlants
-                                            ? 'bg-red-600 hover:bg-red-500'
-                                            : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                    aria-label="Cancel plant changes"
-                                >
-                                    <X className="w-6 h-6 text-white" />
-                                    <Tooltip text="Cancel Plant Changes" />
-                                </button>
+                                {/* Cancel Plants Changes Button */}
+                                <div className="flex flex-col items-center space-y-1">
+                                    <button
+                                        onClick={handleCancelPlantChanges}
+                                        disabled={!hasUnsavedPlants}
+                                        className={`group rounded-full p-3 flex items-center justify-center relative transition
+                                            ${hasUnsavedPlants
+                                                ? 'bg-red-600 hover:bg-red-500'
+                                                : 'bg-neutral-700 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                        aria-label="Cancel plant changes"
+                                    >
+                                        <X className="w-6 h-6 text-white" />
+                                        <Tooltip text="Cancel Plant Changes" />
+                                    </button>
                                     <span className="text-xs text-white">Cancel Changes</span>
                                 </div>
-                                 <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={() => {
-                                        console.log("Add Plants button clicked");
-                                        handleOpenAddPlant();
-                                        setIsDeleteMode(false);
-                                    }}
-                                    className="group bg-emerald-600 rounded-full p-3 flex items-center justify-center hover:bg-emerald-500 relative"
-                                    aria-label="Add plant"
-                                >
-                                    <PlusCircle className="w-6 h-6 text-white" />
-                                    <Tooltip text="Add plant" />
-                                </button>
-                                    <span className="text-xs text-white">Add Plant</span>
-                               </div>
+
+                                {/* Add Plant Button */}
                                 <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={() => {
-                                        setIsDeleteMode((prev) => !prev);
-                                        setActivePlant(null);
-                                    }}
-                                    className={`group rounded-full p-3 flex items-center justify-center relative transition
-                                        ${isDeleteMode
-                                            ? 'bg-red-500 ring-4 ring-red-400 scale-105'
-                                            : 'bg-red-600 hover:bg-red-500'
-                                        }`}
-                                    aria-label="Delete plant"
-                                >
-                                    <Trash2 className="w-6 h-6 text-white" />
-                                    <Tooltip text="Delete plant" />
-                                </button>
+                                    <button
+                                        onClick={() => {
+                                            handleOpenAddPlant();
+                                            setIsDeleteMode(false);
+                                        }}
+                                        className="group bg-emerald-600 rounded-full p-3 flex items-center justify-center hover:bg-emerald-500 relative"
+                                        aria-label="Add plant"
+                                    >
+                                        <PlusCircle className="w-6 h-6 text-white" />
+                                        <Tooltip text="Add plant" />
+                                    </button>
+                                    <span className="text-xs text-white">Add Plant</span>
+                                </div>
+
+                                {/* Delete Mode Button */}
+                                <div className="flex flex-col items-center space-y-1">
+                                    <button
+                                        onClick={() => {
+                                            setIsDeleteMode((prev) => !prev);
+                                            setActivePlant(null);
+                                        }}
+                                        className={`group rounded-full p-3 flex items-center justify-center relative transition
+                                            ${isDeleteMode
+                                                ? 'bg-red-500 ring-4 ring-red-400 scale-105'
+                                                : 'bg-red-600 hover:bg-red-500'
+                                            }`}
+                                        aria-label="Delete plant"
+                                    >
+                                        <Trash2 className="w-6 h-6 text-white" />
+                                        <Tooltip text="Delete plant" />
+                                    </button>
                                     <span className="text-xs text-white">Delete Plant</span>
                                 </div>
-                                 <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={() => {
-                                        handleClearBed();
-                                        setIsDeleteMode(false);
-                                    }}
-                                    className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
-                                    aria-label="Clear bed"
-                                >
-                                    <RefreshCw className="w-6 h-6 text-white" />
-                                    <Tooltip text="Clear bed" />
-                                </button>
+
+                                {/* Clear Bed Button */}
+                                <div className="flex flex-col items-center space-y-1">
+                                    <button
+                                        onClick={() => {
+                                            handleClearBed();
+                                            setIsDeleteMode(false);
+                                        }}
+                                        className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
+                                        aria-label="Clear bed"
+                                    >
+                                        <RefreshCw className="w-6 h-6 text-white" />
+                                        <Tooltip text="Clear bed" />
+                                    </button>
                                     <span className="text-xs text-white">Clear Plants</span>
                                 </div>
                             </>
                         ) : (
+                            // Plant selection buttons view
                             <>
-                            <div className="flex flex-col items-center space-y-1">
-                                <button
-                                    onClick={handlePlantListBack}
-                                    className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
-                                    aria-label="Back to actions"
-                                >
-                                    <ChevronLeft className="w-6 h-6 text-white" />
-                                    <Tooltip text="Back" />
-                                </button>
+                                {/* Back to actions button */}
+                                <div className="flex flex-col items-center space-y-1">
+                                    <button
+                                        onClick={handlePlantListBack}
+                                        className="group bg-neutral-600 rounded-full p-3 flex items-center justify-center hover:bg-neutral-500 relative"
+                                        aria-label="Back to actions"
+                                    >
+                                        <ChevronLeft className="w-6 h-6 text-white" />
+                                        <Tooltip text="Back" />
+                                    </button>
                                     <span className="text-xs text-white">Return to Actions</span>
                                 </div>
+                                {/* Map through active plant buttons to display them */}
                                 {activePlantButtons.map((plant, index) => (
                                     <div key={index} className="relative group w-24 h-24">
                                         <button
@@ -607,9 +696,9 @@ const EditBedPage = () => {
                                                 <span className="text-xs text-gray-400">+ Add Plant</span>
                                             )}
                                         </button>
+                                        {/* Edit button for each plant button slot */}
                                         <button
                                             onClick={() => {
-                                                console.log("Edit button clicked for index:", index);
                                                 setEditingButtonIndex(index);
                                                 setShowPlantCatalogModal(true);
                                             }}
@@ -625,6 +714,7 @@ const EditBedPage = () => {
                     </div>
                 </div>
             </div>
+            {/* Plant Catalog Modal */}
             <PlantCatalogModal
                 isOpen={showPlantCatalogModal}
                 onClose={() => setShowPlantCatalogModal(false)}
@@ -636,7 +726,11 @@ const EditBedPage = () => {
     );
 };
 
-// Tooltip component
+/**
+ * A simple tooltip component that appears on hover.
+ * @param {object} props - The component props.
+ * @param {string} props.text - The text to display in the tooltip.
+ */
 const Tooltip = ({ text }) => (
     <span className="absolute bottom-full mb-2 px-2 py-1 text-xs rounded bg-black text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
         {text}
