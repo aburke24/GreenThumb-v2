@@ -3,26 +3,40 @@ import React, { useState } from 'react';
 import { registerApi } from '../utils/authUtil';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * SignUpPage component allows a user to register for a new account.
+ * It provides a form to input a username, email, and password.
+ * It handles the registration process, including API calls, and
+ * navigates the user after a successful registration.
+ */
 const SignUpPage = () => {
+  // Hook for programmatic navigation.
   const navigate = useNavigate();
 
+  // State for the form input fields.
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // State for displaying error messages and showing a loading indicator.
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handles the form submission for user registration.
+   * It prevents the default form action, clears previous errors,
+   * sets the loading state, and calls the registration API.
+   * On success, it shows an alert and navigates to the login page.
+   * On failure, it sets an error message.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-         console.log("HEre");
+      
     try {
-        console.log("HEre");
-     const response = await registerApi(username, email, password);
-      // Optionally, you could auto-login or redirect
-      console.log(response);
+      await registerApi(username, email, password);
+      console.log('Registration successful!');
       alert('Registration successful! Please login.');
       navigate('/');  
     } catch (err) {
@@ -82,6 +96,7 @@ const SignUpPage = () => {
                 className="w-full px-4 py-3 bg-neutral-700 text-white rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-500 transition"
               />
             </div>
+            {/* Conditional rendering of the error message. */}
             {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
             <div className="flex flex-col space-y-4 pt-4">
               <button

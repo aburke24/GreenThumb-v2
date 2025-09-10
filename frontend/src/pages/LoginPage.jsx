@@ -4,23 +4,38 @@ import { loginApi } from '../utils/authUtil';
 import { useUser } from '../hooks/UserUser'; 
 import logo from '../assets/GreenThumbLogo.svg'
 
+/**
+ * LoginPage component for user authentication.
+ * It provides a form for users to log in with their email and password.
+ * It also handles navigation and displays loading and error states.
+ */
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
   const { user, loading: userLoading, login } = useUser();
 
+  const navigate = useNavigate();
+
+  /**
+   * useEffect hook to handle automatic redirection.
+   * If a user is already authenticated and not in a loading state,
+   * it navigates them directly to the home page.
+   */
   useEffect(() => {
     if (user && !userLoading) {
       navigate('/home');
     }
   }, [user, userLoading, navigate]);
 
-  const handleSubmit = async (e) => {
+    /**
+     * Handles the form submission for the login process.
+     * It prevents the default form behavior, resets the error state,
+     * and calls the loginApi with the provided credentials.
+     * It updates the loading state and handles any errors that occur.
+     */
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -42,6 +57,7 @@ const LoginPage = () => {
     }
   };
 
+  // Displays a loading message while the user is being authenticated.
   if (userLoading || loading) return <p>Loading...</p>;
 
   return (
@@ -79,6 +95,7 @@ const LoginPage = () => {
                 className="w-full px-4 py-3 bg-neutral-700 text-white rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-500 transition"
               />
             </div>
+            {/* Display error message if it exists. */}
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <div className="flex justify-between items-center space-x-4 pt-4">
               <button

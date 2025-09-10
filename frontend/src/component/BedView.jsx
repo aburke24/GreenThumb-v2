@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 
+/**
+ * BedComponent renders a single garden bed with optional plant icons inside it.
+ * It supports resizing, plant rendering, and optional confirm/cancel actions
+ * for unsaved beds (e.g., during placement).
+ *
+ * @param {Object} bed - The bed object containing position and size.
+ * @param {Array} plants - List of plant objects placed in the bed.
+ * @param {boolean} isUnsaved - If true, renders the bed in a temporary placement state.
+ * @param {Function} onConfirm - Callback when the placement is confirmed.
+ * @param {Function} onCancel - Callback when the placement is canceled.
+ * @param {Function} onResize - Callback during resizing (optional).
+ * @param {number} cellSize - Pixel size of one cell in the grid.
+ * @param {boolean} isSelected - Whether the bed is currently selected (resizable).
+ */
 const BedComponent = ({
     bed,
     plants = [], 
@@ -10,7 +24,6 @@ const BedComponent = ({
     onResize,
     cellSize,
     isSelected
-
 }) => {
     const { width, height, top_position, left_position } = bed;
 
@@ -19,7 +32,8 @@ const BedComponent = ({
     const [currentTop, setCurrentTop] = useState(top_position);
     const [currentLeft, setCurrentLeft] = useState(left_position);
     const [isResizing, setIsResizing] = useState(false);
-    
+
+    // Sync local state when props change
     useEffect(() => {
         setCurrentWidth(width);
         setCurrentHeight(height);
@@ -27,6 +41,11 @@ const BedComponent = ({
         setCurrentLeft(left_position);
     }, [width, height, top_position, left_position, plants]);
 
+    /**
+     * Maps a plant's spacing value to its rendered width and height in cells.
+     * @param {number|string} spacing - Spacing value (usually 1, 4, or 9).
+     * @returns {Object} Object with `width` and `height` in grid units.
+     */
     const getPlantDimensions = (spacing) => {
         const s = parseInt(spacing);
         if (s === 1) return { width: 1, height: 1 };
@@ -35,9 +54,14 @@ const BedComponent = ({
         return { width: 1, height: 1 };
     };
 
+    /**
+     * Handles resizing logic for the bed.
+     * Called when any corner/edge handle is clicked and dragged.
+     */
     const handleResize = (e) => {
         e.stopPropagation();
         setIsResizing(true);
+
         const startX = e.clientX;
         const startY = e.clientY;
         const startWidth = currentWidth;
@@ -69,23 +93,19 @@ const BedComponent = ({
             if (isLeft) {
                 const deltaW = Math.round(moveX / cellSize);
                 newWidth = Math.max(1, startWidth - deltaW);
-                if (newWidth > 0) {
-                    newLeft = startLeft + deltaW;
-                }
+                if (newWidth > 0) newLeft = startLeft + deltaW;
             }
             if (isTop) {
                 const deltaH = Math.round(moveY / cellSize);
                 newHeight = Math.max(1, startHeight - deltaH);
-                if (newHeight > 0) {
-                    newTop = startTop + deltaH;
-                }
+                if (newHeight > 0) newTop = startTop + deltaH;
             }
-            
+
             setCurrentWidth(newWidth);
             setCurrentHeight(newHeight);
             setCurrentTop(newTop);
             setCurrentLeft(newLeft);
-            
+
             onResize?.({
                 id: bed.id,
                 newWidth,
@@ -105,15 +125,16 @@ const BedComponent = ({
         window.addEventListener('mouseup', stopDrag);
     };
 
+    // Enrich plant objects with their dimensions
     const processedPlants = plants.map(plant => {
         const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
-        return {
-            ...plant,
-            plantWidth: plantW,
-            plantHeight: plantH,
-        };
+        return { ...plant, plantWidth: plantW, plantHeight: plantH };
     });
 
+    /**
+     * Renders individual cells for the bed grid.
+     * Occupied cells (covered by plants) are rendered with a darker background.
+     */
     const renderGridCells = () => {
         const cols = isUnsaved ? currentWidth : bed.width;
         const rows = isUnsaved ? currentHeight : bed.height;

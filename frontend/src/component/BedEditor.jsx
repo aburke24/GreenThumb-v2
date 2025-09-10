@@ -1,7 +1,18 @@
-// Bed.jsx
-
 import React, { useEffect, useRef, useState } from 'react';
 
+/**
+ * Renders a plant bed grid UI allowing for plant placement, previewing, and deletion.
+ * @param {number} width - Number of columns in the grid.
+ * @param {number} height - Number of rows in the grid.
+ * @param {Array} bedLayout - 2D array representing the plant layout.
+ * @param {Function} onGridClick - Callback when a cell is clicked.
+ * @param {Object} activePlant - The plant object currently selected for placement.
+ * @param {boolean} isDeleteMode - Whether the app is in delete mode.
+ * @param {Function} onCellHover - Callback when a cell is hovered.
+ * @param {Function} onCellLeave - Callback when the cursor leaves the grid.
+ * @param {boolean} isDragging - Whether the mouse is currently dragging.
+ * @param {Function} setIsDragging - Setter for dragging state.
+ */
 const Bed = ({
     width,
     height,
@@ -16,9 +27,11 @@ const Bed = ({
 }) => {
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
     const [localHoveredCell, setLocalHoveredCell] = useState(null);
 
+    /**
+     * Observes container size changes and updates internal dimensions accordingly.
+     */
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -31,6 +44,7 @@ const Bed = ({
         return () => resizeObserver.disconnect();
     }, []);
 
+    // Early return if the bed layout is invalid or not yet available
     if (!bedLayout || bedLayout.length === 0 || bedLayout[0] === undefined) {
         console.warn("Bed.jsx: bedLayout is not yet available or is invalid.");
         return (
@@ -50,6 +64,11 @@ const Bed = ({
     const gridWidth = cellSize * width;
     const gridHeight = cellSize * height;
 
+    /**
+     * Converts plant spacing into grid dimensions (width x height).
+     * @param {number|string} spacing - Spacing value indicating size.
+     * @returns {Object} Object containing width and height.
+     */
     const getPlantDimensions = (spacing) => {
         const s = parseInt(spacing);
         if (s === 1) return { width: 1, height: 1 };
@@ -58,6 +77,7 @@ const Bed = ({
         return { width: 1, height: 1 };
     };
 
+    // Build an array of placed plants, accounting for their size and positions
     const bedPlants = [];
     const visitedCells = new Set();
     for (let r = 0; r < height; r++) {
@@ -81,17 +101,20 @@ const Bed = ({
         }
     }
 
-    // Function to check if a plant can be placed at the hovered position
+    /**
+     * Determines whether the currently selected plant can be placed at a given position.
+     * @param {number} row - Row index.
+     * @param {number} col - Column index.
+     * @returns {boolean} True if placement is valid; otherwise, false.
+     */
     const canPlacePlant = (row, col) => {
         if (!activePlant) return false;
         const { width: plantW, height: plantH } = getPlantDimensions(activePlant.spacing);
 
-        // Check if the plant would go out of bounds
         if (row + plantH > height || col + plantW > width) {
             return false;
         }
 
-        // Check for overlaps with existing plants
         for (let r = row; r < row + plantH; r++) {
             for (let c = col; c < col + plantW; c++) {
                 if (r >= 0 && r < height && c >= 0 && c < width) {
@@ -106,16 +129,25 @@ const Bed = ({
         return true;
     };
 
+    /**
+     * Handles mouse hover over a cell.
+     * @param {number} rowIndex - Row index of the cell.
+     * @param {number} colIndex - Column index of the cell.
+     */
     const handleCellHover = (rowIndex, colIndex) => {
         setLocalHoveredCell({ row: rowIndex, col: colIndex });
         onCellHover({ row: rowIndex, col: colIndex });
     };
 
+    /**
+     * Handles mouse leaving the grid area.
+     */
     const handleMouseLeave = () => {
         setLocalHoveredCell(null);
         onCellLeave();
     };
 
+    // Whether to show a plant preview at the hovered cell
     const previewPlant = activePlant && !isDeleteMode && localHoveredCell;
     const previewPosition = previewPlant ? {
         top: localHoveredCell.row * cellSize,
@@ -141,6 +173,7 @@ const Bed = ({
                     position: 'relative',
                 }}
             >
+                {/* Grid layer */}
                 <div
                     className="absolute inset-0 grid z-10 border-2 border-white"
                     style={{
@@ -162,7 +195,6 @@ const Bed = ({
                                         onGridClick(rowIndex, colIndex);
                                     }}
                                     onMouseEnter={() => {
-                                        // CRUCIAL: Call handleCellHover here to track the mouse movement
                                         handleCellHover(rowIndex, colIndex);
 
                                         if (isDragging) {
@@ -175,9 +207,7 @@ const Bed = ({
                     )}
                 </div>
 
-                {/* New: Plant Preview Div
-                  This element is rendered conditionally and follows the mouse cursor.
-                */}
+                {/* Conditional: Render preview of plant at hover location */}
                 {previewPlant && (
                     <div
                         className="absolute z-30 pointer-events-none transition-opacity duration-100 ease-in-out flex items-center justify-center p-1"
@@ -197,7 +227,7 @@ const Bed = ({
                     </div>
                 )}
 
-                {/* Existing: Render the placed plants */}
+                {/* Render placed plants on the grid */}
                 {bedPlants.map((plant) => {
                     const { width: plantW, height: plantH } = getPlantDimensions(plant.spacing);
                     return (

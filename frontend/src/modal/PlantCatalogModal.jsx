@@ -2,13 +2,24 @@ import React from 'react';
 import { X } from 'lucide-react';
 import PlantCatalog from '../plantCatalog.json';
 
+/**
+ * A modal component that displays a catalog of available plants.
+ *
+ * This modal allows the user to browse a list of plants and select one to add to a garden bed.
+ * Plants that are already on the active buttons list are disabled to prevent duplicate selections.
+ *
+ * @param {object} props - The component props.
+ * @param {boolean} props.isOpen - A boolean indicating whether the modal is open.
+ * @param {Function} props.onClose - A callback function to close the modal.
+ * @param {Function} props.onSelect - A callback function to handle the selection of a plant.
+ * @param {string|null} props.selectedPlantId - The ID of the currently selected plant.
+ * @param {Array} props.activePlantButtons - An array of plant objects that are already in use, to be disabled in the catalog.
+ */
 const PlantCatalogModal = ({ isOpen, onClose, onSelect, selectedPlantId, activePlantButtons }) => {
-    // If the modal isn't open, render nothing
     if (!isOpen) {
         return null;
     }
 
-    // Create a set of plant_ids from activePlantButtons for efficient lookup
     const activePlantIds = new Set(
         activePlantButtons
             .filter((plant) => plant !== null)
@@ -16,7 +27,6 @@ const PlantCatalogModal = ({ isOpen, onClose, onSelect, selectedPlantId, activeP
     );
 
     return (
-        // Overlay: Full-screen, centered with flexbox, high z-index
         <div
             className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center"
             onClick={onClose}
@@ -42,6 +52,7 @@ const PlantCatalogModal = ({ isOpen, onClose, onSelect, selectedPlantId, activeP
                 <div className="flex-1 overflow-y-auto pr-2">
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4">
                         {PlantCatalog.map((plant) => {
+                            // Check if the plant is disabled based on the active buttons list
                             const isDisabled = activePlantIds.has(plant.plant_id);
                             return (
                                 <button
@@ -56,11 +67,13 @@ const PlantCatalogModal = ({ isOpen, onClose, onSelect, selectedPlantId, activeP
                                             : 'bg-neutral-800 hover:bg-neutral-700'
                                     }`}
                                 >
+                                    {/* Plant icon */}
                                     <img
                                         src={plant.icon}
                                         alt={plant.common_name}
                                         className="w-2/3 h-2/3 max-w-[48px] max-h-[48px] mb-1 object-contain"
                                     />
+                                    {/* Plant common name */}
                                     <span className="text-xs text-center line-clamp-2">{plant.common_name}</span>
                                 </button>
                             );
