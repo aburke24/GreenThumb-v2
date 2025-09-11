@@ -1,11 +1,39 @@
-# Green Thumb - Garden manangement tool
+Garden Planner
+A full-stack web application to help users plan and manage their gardens.
 
-A full-stack application to help gardeners plan and maintain their garden
+Technologies Used
+Frontend: React, React Router, Tailwind CSS
 
-## Project Structure
-- **frontend/**: The React application for the user interface.
-- **backend/**: The Node.js/Express server and PostgreSQL database interaction.
-- **documentation/**: Project notes, database schema, and other documentation.
+Backend: Node.js, Express.js
 
+Database: PostgreSQL
 
-npm install bcrypt jsonwebtoken
+Getting Started
+  Prerequisites
+    Node.js
+    
+    npm
+    
+    PostgreSQL
+    
+    Git
+  
+ Setup
+  Clone the repository:
+  git clone [[https://github.com/your-username/your-repo-name.git](https://github.com/aburke24/GreenThumb-v2)]
+  cd frontend
+
+Set up the backend:
+  cd backend
+  npm install
+  Create a .env file with your database details.
+  Run database migrations: npx knex migrate:latest
+  Start the server: npm start
+
+Set up the frontend:
+  cd ../frontend
+  Create a .env file with your backend url.
+  npm install
+  Start the app: npm start
+
+The frontend will be available at http://localhost:5173 and the backend at http://localhost:3000.
