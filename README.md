@@ -1,5 +1,6 @@
 Garden Planner
 A full-stack web application to help users plan and manage their gardens.
+https://green-thumb-v2.vercel.app/
 
 Technologies Used
 Frontend: React, React Router, Tailwind CSS
